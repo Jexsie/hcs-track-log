@@ -1,5 +1,5 @@
-import { PageShell } from "./components/page-shell";
-import { SearchForm } from "./components/search-form";
+import { PageShell } from "@/app/components/page-shell";
+import { SearchForm } from "@/app/components/search-form";
 
 const STEPS = [
   { title: "Instant timeline", body: "Events load from the database cache immediately." },

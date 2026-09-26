@@ -24,7 +24,7 @@ const EVENT_KEYS = ["status", "location", "carrier", "timestamp"] as const;
 const CARRIER_KEYS = ["name", "scacCode"] as const;
 
 /** Standard Carrier Alpha Code: 2–4 letters, upper-cased. */
-function normalizeScacCode(value: unknown): string {
+export function normalizeScacCode(value: unknown): string {
   const code = normalizeText(value).toUpperCase();
   if (!/^[A-Z]{2,4}$/.test(code)) throw new FieldError("must be 2–4 letters");
   return code;

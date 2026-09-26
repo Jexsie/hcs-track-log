@@ -131,6 +131,10 @@
               "command": "{run:next:dev}"
             },
             {
+              "label": "Register parcels and record events in the administrator console (paste SUBMITTER_API_TOKEN when asked)",
+              "url": "http://localhost:3000/admin"
+            },
+            {
               "label": "Verify every event on the topic from the command line",
               "command": "{run:verify} -- --topic <topicId>"
             },

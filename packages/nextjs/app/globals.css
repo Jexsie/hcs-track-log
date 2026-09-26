@@ -16,6 +16,8 @@
   --danger: #c4231c;
   --danger-soft: #fdecea;
   --sheen: rgb(11 107 203 / 0.08);
+  --band: #141820;
+  --band-fg: #f5f7fa;
   color-scheme: light dark;
 }
 
@@ -35,6 +37,34 @@
     --danger: #ff6b61;
     --danger-soft: #2d1414;
     --sheen: rgb(88 166 255 / 0.1);
+    --band: #0b0e13;
+    --band-fg: #e6e9ee;
+  }
+}
+
+/* Administrator console: violet palette so a submitting admin can never mistake it for the public
+   tracker. Same token names, so every utility (bg-accent, border-line, …) adapts automatically. */
+[data-theme="admin"] {
+  --bg: #f7f5fc;
+  --surface: #ffffff;
+  --surface-2: #f1ecfb;
+  --line: #e2dcf1;
+  --accent: #6d28d9;
+  --sheen: rgb(109 40 217 / 0.08);
+  --band: #2e1065;
+  --band-fg: #f5f3ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="admin"] {
+    --bg: #110d1a;
+    --surface: #1a1426;
+    --surface-2: #241c34;
+    --line: #342a4a;
+    --accent: #a78bfa;
+    --sheen: rgb(167 139 250 / 0.1);
+    --band: #1e1433;
+    --band-fg: #ede9fe;
   }
 }
 
@@ -53,6 +83,8 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-sheen: var(--sheen);
+  --color-band: var(--band);
+  --color-band-fg: var(--band-fg);
 }
 
 @theme {

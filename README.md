@@ -141,6 +141,30 @@ npm run verify -- --topic 0.0.12345 --skip-scan  # skip paging through the whole
 - **Defaults:** `--topic` falls back to `HCS_TOPIC_ID`.
 - **Exit codes:** `0` all verified, `1` tampering found, `2` incomplete (mirror node unreachable).
 
+### Administrator console
+
+Authorized submitters use **`/admin`**, which has a violet theme so it can't be mistaken for the
+public tracker.
+
+- **`/admin/parcels/new`:** register a parcel. Enter the consignment (description, package count
+  and type, gross mass, volume), the parties, the booking reference, and the first event. The
+  server assigns `createdAt`, derives the tracking ID, and anchors the event on HCS before saving
+  anything.
+- **`/admin/events/new?parcel=<trackingId>`:** record a status update. The form looks the parcel
+  up first, so you can confirm it is the right one.
+
+How the console behaves:
+
+- **Validation:** every field is checked in the browser with the same normalizers the server uses,
+  so all errors show at once. Server-side errors are mapped back to the field that caused them.
+- **Event time:** entered in your local time and converted to canonical UTC (whole seconds).
+- **After a successful submission**, the console shows the tracking ID (with a copy button), a
+  link to the ledger message, and the exact envelope written on-chain. The envelope is recomputed
+  in your browser.
+- **The token:** the console calls the write API with `SUBMITTER_API_TOKEN`. You paste it once per
+  tab; it is kept in `sessionStorage` and dropped when the tab closes. The pages are `noindex` and
+  hold no secrets: without the token they cannot write anything.
+
 ### Why recompute?
 
 Postgres has no hash column that verification relies on. Every hash is recomputed from content
