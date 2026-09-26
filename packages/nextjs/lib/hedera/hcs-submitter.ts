@@ -7,7 +7,7 @@ import {
   TopicMessageSubmitTransaction,
 } from "@hiero-ledger/sdk";
 import type { EnvelopeSubmitter, SubmissionReceipt } from "@/lib/tracking/ports";
-import { assertSignersSatisfy } from "./submit-key";
+import { assertSignersSatisfy } from "./threshold-key";
 
 export interface HcsSubmitterOptions {
   client: Client;
@@ -24,6 +24,7 @@ export class HcsEnvelopeSubmitter implements EnvelopeSubmitter {
     assertSignersSatisfy(
       options.submitKey,
       options.signers.map((k) => k.publicKey),
+      "submit",
     );
   }
 

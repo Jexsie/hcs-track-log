@@ -60,22 +60,28 @@ export function readOperatorConfig(env: Env = process.env): OperatorConfig {
   };
 }
 
-export interface SubmitKeyConfig {
+/** The topic's two threshold keys: `submit` gates writes, `admin` gates topic updates/deletion. */
+export type KeyRole = "submit" | "admin";
+
+export interface ThresholdKeyConfig {
   publicKeys: string[];
   threshold: number;
 }
 
-export function readSubmitKeyConfig(env: Env = process.env): SubmitKeyConfig {
-  const publicKeys = list(env, "HCS_SUBMIT_PUBLIC_KEYS");
-  const raw = env.HCS_SUBMIT_THRESHOLD?.trim() ?? "";
+/** HCS_{SUBMIT|ADMIN}_PUBLIC_KEYS + HCS_{SUBMIT|ADMIN}_THRESHOLD */
+export function readKeyConfig(role: KeyRole, env: Env = process.env): ThresholdKeyConfig {
+  const prefix = `HCS_${role.toUpperCase()}`;
+  const publicKeys = list(env, `${prefix}_PUBLIC_KEYS`);
+  const raw = env[`${prefix}_THRESHOLD`]?.trim() ?? "";
   if (!/^[1-9]\d*$/.test(raw)) {
-    throw new ConfigError(`HCS_SUBMIT_THRESHOLD must be a positive integer, got "${raw}"`);
+    throw new ConfigError(`${prefix}_THRESHOLD must be a positive integer, got "${raw}"`);
   }
   return { publicKeys, threshold: Number(raw) };
 }
 
-export function readSignerKeys(env: Env = process.env): string[] {
-  return list(env, "HCS_SUBMIT_SIGNER_KEYS");
+/** HCS_{SUBMIT|ADMIN}_SIGNER_KEYS: private keys this process signs with for that role. */
+export function readSignerKeys(role: KeyRole, env: Env = process.env): string[] {
+  return list(env, `HCS_${role.toUpperCase()}_SIGNER_KEYS`);
 }
 
 export function readTopicId(env: Env = process.env): string {

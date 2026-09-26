@@ -54,7 +54,7 @@ on-chain anchor.
    are ISO-8601 UTC with a `Z` suffix.
 5. **SHA-256 only.** Never Keccak-256.
 6. **No business metadata on-chain.** The envelope is `{ v, parcelHash, payloadHash }` only.
-7. **Multi-sig submit key is enforced** on the topic itself, not in application code.
+7. **Both topic keys are threshold keys, enforced by the network.** The submit key (≥2 of N) gates every message; the admin key (≥2 of N) gates topic updates and deletion. Neither is a stub or an app-level check.
 8. **`.env` is never committed.** `.env.example` holds placeholders only.
 9. **npm only.** Never yarn or pnpm. No Solidity.
 
@@ -89,8 +89,8 @@ on-chain anchor.
 | `packages/nextjs/lib/config/load-env.ts`                       | Loads the repo-root `.env` for CLI scripts                                                                                                    |
 | `packages/nextjs/lib/hedera/keys.ts`                           | Parse DER / 0x-hex ECDSA keys                                                                                                                 |
 | `packages/nextjs/lib/hedera/client.ts`                         | Hedera client with the operator as fee payer                                                                                                  |
-| `packages/nextjs/lib/hedera/submit-key.ts`                     | Threshold KeyList builder (≥2 of N), signer sufficiency check, on-chain key comparison                                                        |
-| `packages/nextjs/lib/hedera/create-topic.ts`                   | Create the topic with the submit key (no admin key) and read it back to confirm                                                               |
+| `packages/nextjs/lib/hedera/threshold-key.ts`                  | Threshold KeyList builder for the `submit` and `admin` roles (≥2 of N), env parsing, signer sufficiency check, on-chain key comparison        |
+| `packages/nextjs/lib/hedera/create-topic.ts`                   | Create the topic with threshold admin + submit keys (co-signed by admins) and read both back to confirm                                       |
 | `packages/nextjs/lib/hedera/hcs-submitter.ts`                  | `EnvelopeSubmitter` for HCS: freeze, co-sign, submit, wait for the SUCCESS receipt                                                            |
 | `packages/nextjs/lib/tracking/ports.ts`                        | `EnvelopeSubmitter` / `TrackingStore` interfaces                                                                                              |
 | `packages/nextjs/lib/tracking/anchor.ts`                       | Hash, build the envelope, submit. No DB I/O                                                                                                   |
@@ -100,7 +100,7 @@ on-chain anchor.
 | `packages/nextjs/scripts/create-topic.ts`                      | `npm run topic:create`                                                                                                                        |
 | `packages/nextjs/scripts/generate-keys.ts`                     | `npm run keys:generate`                                                                                                                       |
 | `packages/nextjs/test/fakes.ts`                                | Controllable submitter + in-memory store for ordering tests                                                                                   |
-| `packages/nextjs/test/integration/hcs.testnet.test.ts`         | Opt-in live proof of submit-key enforcement (`RUN_TESTNET_TESTS=1`)                                                                           |
+| `packages/nextjs/test/integration/hcs.testnet.test.ts`         | Opt-in live proof that the network enforces both threshold keys (`RUN_TESTNET_TESTS=1`)                                                       |
 | `docker-compose.yml`                                           | Postgres 18 for development and tests                                                                                                         |
 | `docker/postgres/init/01-create-test-database.sql`             | Creates `hcs_track_log_test` on first start                                                                                                   |
 | `packages/nextjs/migrations/1758873600000_initial-schema.sql`  | `parcels` / `cargo_events` schema (no payload hash column)                                                                                    |
@@ -109,7 +109,7 @@ on-chain anchor.
 | `packages/nextjs/lib/db/rows.ts`                               | Row types and mapping from columns to canonical-builder input                                                                                 |
 | `packages/nextjs/lib/db/tracking-store.ts`                     | Derived writes (`TrackingStore`); parcel and first event in one transaction                                                                   |
 | `packages/nextjs/lib/db/tracking-reader.ts`                    | Database-first reads: parcel and events in ledger order                                                                                       |
-| `packages/nextjs/lib/hedera/submitter-from-env.ts`             | Builds the submitter from env and verifies the topic's submit key on-chain                                                                    |
+| `packages/nextjs/lib/hedera/submitter-from-env.ts`             | Builds the submitter from env and verifies the topic's admin and submit keys on-chain                                                         |
 | `packages/nextjs/lib/server/http.ts`                           | Bearer auth, JSON helpers, domain error → HTTP mapping, log serialization                                                                     |
 | `packages/nextjs/lib/server/write-handlers.ts`                 | Write endpoints (lazy submitter, so bad requests never touch Hedera)                                                                          |
 | `packages/nextjs/lib/server/services.ts`                       | Process-wide pool/submitter singletons and handler wiring                                                                                     |

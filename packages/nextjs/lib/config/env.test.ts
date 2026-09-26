@@ -3,8 +3,8 @@ import {
   ConfigError,
   readMirrorNodeUrl,
   readOperatorConfig,
+  readKeyConfig,
   readSignerKeys,
-  readSubmitKeyConfig,
   readTopicId,
 } from "./env";
 
@@ -49,10 +49,11 @@ describe("readOperatorConfig", () => {
   });
 });
 
-describe("readSubmitKeyConfig", () => {
+describe.each(["submit", "admin"] as const)("readKeyConfig(%s)", (role) => {
+  const P = `HCS_${role.toUpperCase()}`;
   it("splits comma-separated public keys and parses the threshold", () => {
     expect(
-      readSubmitKeyConfig(env({ HCS_SUBMIT_PUBLIC_KEYS: " a, b ,c ", HCS_SUBMIT_THRESHOLD: "2" })),
+      readKeyConfig(role, env({ [`${P}_PUBLIC_KEYS`]: " a, b ,c ", [`${P}_THRESHOLD`]: "2" })),
     ).toEqual({
       publicKeys: ["a", "b", "c"],
       threshold: 2,
@@ -61,20 +62,22 @@ describe("readSubmitKeyConfig", () => {
 
   it.each(["", "0", "-1", "1.5", "two"])("rejects threshold %j", (threshold) => {
     expect(() =>
-      readSubmitKeyConfig(env({ HCS_SUBMIT_PUBLIC_KEYS: "a,b", HCS_SUBMIT_THRESHOLD: threshold })),
-    ).toThrow("HCS_SUBMIT_THRESHOLD");
+      readKeyConfig(role, env({ [`${P}_PUBLIC_KEYS`]: "a,b", [`${P}_THRESHOLD`]: threshold })),
+    ).toThrow(`${P}_THRESHOLD`);
   });
 
   it("rejects an empty key list", () => {
     expect(() =>
-      readSubmitKeyConfig(env({ HCS_SUBMIT_PUBLIC_KEYS: " , ", HCS_SUBMIT_THRESHOLD: "1" })),
-    ).toThrow("HCS_SUBMIT_PUBLIC_KEYS");
+      readKeyConfig(role, env({ [`${P}_PUBLIC_KEYS`]: " , ", [`${P}_THRESHOLD`]: "1" })),
+    ).toThrow(`${P}_PUBLIC_KEYS`);
   });
 });
 
 describe("other readers", () => {
   it("reads signer keys and topic id", () => {
-    expect(readSignerKeys(env({ HCS_SUBMIT_SIGNER_KEYS: "x,y" }))).toEqual(["x", "y"]);
+    expect(readSignerKeys("submit", env({ HCS_SUBMIT_SIGNER_KEYS: "x,y" }))).toEqual(["x", "y"]);
+    expect(readSignerKeys("admin", env({ HCS_ADMIN_SIGNER_KEYS: "z" }))).toEqual(["z"]);
+    expect(() => readSignerKeys("admin", env({}))).toThrow("HCS_ADMIN_SIGNER_KEYS");
     expect(readTopicId(env({ HCS_TOPIC_ID: "0.0.42" }))).toBe("0.0.42");
     expect(() => readTopicId(env({ HCS_TOPIC_ID: "0.0.xxxxxx" }))).toThrow("HCS_TOPIC_ID");
   });

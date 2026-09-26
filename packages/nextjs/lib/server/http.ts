@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { ValidationError } from "@/lib/canonical/errors";
 import { ConfigError } from "@/lib/config/env";
-import { SubmitKeyError } from "@/lib/hedera/submit-key";
+import { ThresholdKeyError } from "@/lib/hedera/threshold-key";
 import {
   DerivedWriteError,
   ParcelExistsError,
@@ -52,7 +52,7 @@ const failure = (
 ) => jsonResponse({ error: { code, message, ...extra } }, status);
 
 const isMisconfiguration = (error: unknown) =>
-  error instanceof ConfigError || error instanceof SubmitKeyError;
+  error instanceof ConfigError || error instanceof ThresholdKeyError;
 
 /** Map domain errors to HTTP. Internal details are logged, never returned. */
 export function errorResponse(error: unknown, log: Logger = console.error): Response {

@@ -36,11 +36,23 @@
       },
       {
         "key": "HCS_SUBMIT_THRESHOLD",
-        "description": ".env. Number of submitter signatures required per message (1..N)."
+        "description": ".env. Number of submitter signatures required per message (2..N)."
       },
       {
         "key": "HCS_SUBMIT_SIGNER_KEYS",
         "description": ".env. Comma-separated private keys this server signs submissions with. Must meet HCS_SUBMIT_THRESHOLD."
+      },
+      {
+        "key": "HCS_ADMIN_PUBLIC_KEYS",
+        "description": ".env. Comma-separated public keys of topic administrators. Becomes the topic's threshold admin key (required to update or delete the topic)."
+      },
+      {
+        "key": "HCS_ADMIN_THRESHOLD",
+        "description": ".env. Number of admin signatures required (2..N)."
+      },
+      {
+        "key": "HCS_ADMIN_SIGNER_KEYS",
+        "description": ".env. Admin private keys used only by `npm run topic:create` to co-sign topic creation. Not needed by the running server."
       },
       {
         "key": "MIRROR_NODE_URL",
@@ -76,7 +88,7 @@
               "text": "cp .env.example .env"
             },
             {
-              "label": "Dev only: generate a 2-of-3 set of submitter keys and paste the printed lines into .env",
+              "label": "Dev only: generate 2-of-3 submit and admin key sets and paste the printed lines into .env",
               "command": "{run:keys:generate}"
             },
             {
@@ -102,7 +114,7 @@
           "title": "Ledger",
           "steps": [
             {
-              "label": "Create the HCS topic with the multi-sig submit key, then set HCS_TOPIC_ID in .env",
+              "label": "Create the HCS topic with threshold admin and submit keys, then set HCS_TOPIC_ID in .env",
               "command": "{run:topic:create}"
             },
             {

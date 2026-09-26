@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ConfigError } from "@/lib/config/env";
 import { ValidationError } from "@/lib/canonical/errors";
-import { SubmitKeyError } from "@/lib/hedera/submit-key";
+import { ThresholdKeyError } from "@/lib/hedera/threshold-key";
 import {
   DerivedWriteError,
   ParcelExistsError,
@@ -67,7 +67,7 @@ describe("errorResponse", () => {
       500,
       "SERVER_MISCONFIGURED",
     ],
-    [new SubmissionFailedError(new SubmitKeyError("mismatch")), 500, "SERVER_MISCONFIGURED"],
+    [new SubmissionFailedError(new ThresholdKeyError("mismatch")), 500, "SERVER_MISCONFIGURED"],
     [new Error("boom"), 500, "INTERNAL_ERROR"],
   ])("maps %s to %i", async (error, status, code) => {
     const res = errorResponse(error, quiet);

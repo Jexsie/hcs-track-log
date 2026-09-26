@@ -1,7 +1,7 @@
 import { AccountId, Client, PrivateKey, TopicId } from "@hiero-ledger/sdk";
 import { afterAll, describe, expect, it } from "vitest";
 import { HcsEnvelopeSubmitter } from "./hcs-submitter";
-import { SubmitKeyError, buildSubmitKey, countSatisfiedSignatures } from "./submit-key";
+import { ThresholdKeyError, buildThresholdKey, countSatisfiedSignatures } from "./threshold-key";
 
 // Offline: freezing and signing needs a client for node ids and a transaction id, but no network I/O.
 const operatorKey = PrivateKey.generateED25519();
@@ -15,9 +15,10 @@ const [first, second, outsider] = [
   PrivateKey.generateECDSA(),
 ] as const;
 const signers = [first, second, outsider];
-const submitKey = buildSubmitKey(
+const submitKey = buildThresholdKey(
   signers.map((k) => k.publicKey),
   2,
+  "submit",
 );
 const message = new TextEncoder().encode('{"parcelHash":"a","payloadHash":"b","v":1}');
 
@@ -25,7 +26,7 @@ describe("HcsEnvelopeSubmitter", () => {
   it("refuses to start with signers that cannot meet the topic's threshold", () => {
     expect(
       () => new HcsEnvelopeSubmitter({ client, topicId, submitKey, signers: signers.slice(0, 1) }),
-    ).toThrow(SubmitKeyError);
+    ).toThrow(ThresholdKeyError);
   });
 
   it("produces a single-chunk transaction signed by enough submit-key holders", async () => {
