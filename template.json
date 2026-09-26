@@ -49,6 +49,14 @@
       {
         "key": "DATABASE_URL",
         "description": ".env. Postgres connection string (required). docker-compose.yml default: postgres://hcs:hcs@localhost:5432/hcs_track_log."
+      },
+      {
+        "key": "TEST_DATABASE_URL",
+        "description": ".env. Test database for `npm run test`; its schema is dropped on every run and its name must end in _test (default postgres://hcs:hcs@localhost:5432/hcs_track_log_test)."
+      },
+      {
+        "key": "SUBMITTER_API_TOKEN",
+        "description": ".env. Bearer token (at least 32 chars) required by the write API. Generate with `openssl rand -hex 32`."
       }
     ],
     "outro": {
@@ -96,6 +104,10 @@
             {
               "label": "Create the HCS topic with the multi-sig submit key, then set HCS_TOPIC_ID in .env",
               "command": "{run:topic:create}"
+            },
+            {
+              "label": "Optional: anchor a demo parcel on HCS and cache it",
+              "command": "{run:db:seed}"
             }
           ]
         },

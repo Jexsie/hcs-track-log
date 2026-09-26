@@ -91,3 +91,24 @@ export function readMirrorNodeUrl(env: Env = process.env): string {
   }
   return value.replace(/\/+$/, "");
 }
+
+export function readDatabaseUrl(env: Env = process.env, key = "DATABASE_URL"): string {
+  const value = required(env, key);
+  if (!/^postgres(ql)?:\/\//.test(value)) {
+    throw new ConfigError(`${key} must be a postgres:// or postgresql:// URL`);
+  }
+  return value;
+}
+
+const TOKEN_PLACEHOLDER = "change-me-to-a-long-random-string";
+
+/** Bearer token for the write API. The server co-signs submissions, so writes must be gated. */
+export function readSubmitterApiToken(env: Env = process.env): string {
+  const value = required(env, "SUBMITTER_API_TOKEN");
+  if (value === TOKEN_PLACEHOLDER) {
+    throw new ConfigError("SUBMITTER_API_TOKEN is still the .env.example placeholder");
+  }
+  if (value.length < 32)
+    throw new ConfigError("SUBMITTER_API_TOKEN must be at least 32 characters");
+  return value;
+}

@@ -1,0 +1,24 @@
+# Local Postgres for hcs-track-log. Postgres is REQUIRED: it is the read cache derived from HCS.
+#   docker compose up -d
+name: hcs-track-log
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: hcs
+      POSTGRES_PASSWORD: hcs
+      POSTGRES_DB: hcs_track_log
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      # Creates hcs_track_log_test for `npm run test` on first start.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hcs -d hcs_track_log"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:

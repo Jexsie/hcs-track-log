@@ -39,6 +39,10 @@ export class HcsEnvelopeSubmitter implements EnvelopeSubmitter {
     return tx;
   }
 
+  close(): void {
+    this.options.client.close();
+  }
+
   /** Resolves only once the network reports consensus SUCCESS. */
   async submit(message: Uint8Array): Promise<SubmissionReceipt> {
     const { client } = this.options;

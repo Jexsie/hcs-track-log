@@ -37,6 +37,7 @@ npm run keys:generate       # dev only: prints submitter key lines to paste into
 docker compose up -d        # start Postgres
 npm run db:migrate          # create tables
 npm run topic:create        # create the multi-sig HCS topic; put the id in HCS_TOPIC_ID
+npm run db:seed             # optional: anchor a demo parcel on HCS and cache it
 npm run next:dev            # http://localhost:3000
 ```
 
@@ -45,17 +46,19 @@ npm run next:dev            # http://localhost:3000
 All variables live in `.env` at the repository root. `.env.example` holds placeholders only.
 **Never commit `.env`.**
 
-| Variable                 | Purpose                                                       |
-| ------------------------ | ------------------------------------------------------------- |
-| `HEDERA_NETWORK`         | `testnet`, `previewnet` or `mainnet`                          |
-| `HEDERA_OPERATOR_ID`     | Account that pays fees and creates the topic                  |
-| `HEDERA_OPERATOR_KEY`    | Operator private key                                          |
-| `HCS_TOPIC_ID`           | Topic that receives event envelopes                           |
-| `HCS_SUBMIT_PUBLIC_KEYS` | Comma-separated public keys of authorized submitters          |
-| `HCS_SUBMIT_THRESHOLD`   | Signatures required per message                               |
-| `HCS_SUBMIT_SIGNER_KEYS` | Private keys this server signs with (must meet the threshold) |
-| `MIRROR_NODE_URL`        | Mirror node base URL used for verification                    |
-| `DATABASE_URL`           | Postgres connection string                                    |
+| Variable                 | Purpose                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| `HEDERA_NETWORK`         | `testnet`, `previewnet` or `mainnet`                                                           |
+| `HEDERA_OPERATOR_ID`     | Account that pays fees and creates the topic                                                   |
+| `HEDERA_OPERATOR_KEY`    | Operator private key                                                                           |
+| `HCS_TOPIC_ID`           | Topic that receives event envelopes                                                            |
+| `HCS_SUBMIT_PUBLIC_KEYS` | Comma-separated public keys of authorized submitters                                           |
+| `HCS_SUBMIT_THRESHOLD`   | Signatures required per message                                                                |
+| `HCS_SUBMIT_SIGNER_KEYS` | Private keys this server signs with (must meet the threshold)                                  |
+| `MIRROR_NODE_URL`        | Mirror node base URL used for verification                                                     |
+| `DATABASE_URL`           | Postgres connection string                                                                     |
+| `TEST_DATABASE_URL`      | Test database; **its schema is dropped** on every `npm run test`. The name must end in `_test` |
+| `SUBMITTER_API_TOKEN`    | Bearer token for the write API (≥ 32 chars; `openssl rand -hex 32`)                            |
 
 ## Architecture
 
@@ -152,6 +155,50 @@ A parcel is written to Postgres together with its first event, and only after th
 consensus. Every cached parcel is therefore anchored on the ledger. `createdAt` is always assigned
 by the server, at whole-second precision.
 
+### Database
+
+**Postgres is required.** `docker compose up -d` starts Postgres 18 with two databases,
+`hcs_track_log` (the app) and `hcs_track_log_test` (the test suite). Migrations live in
+`packages/nextjs/migrations` as plain SQL and are run by `npm run db:migrate`. To roll back the
+latest migration, run `npm run db:migrate -- --down`.
+
+| Table          | Columns                                                                                                                                                                                                      | Notes                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| `parcels`      | `id`, `parcel_hash` (unique), description, package_count, package_type, gross_mass_kg `NUMERIC(10,2)`, volume_cubic_meters `NUMERIC(10,2)`, shipper, consignee, booking_ref, created_at `TIMESTAMPTZ(0)`     | Immutable parcel content   |
+| `cargo_events` | `id`, `parcel_hash` → parcels `ON DELETE CASCADE`, status, location, carrier_name, carrier_scac_code, event_timestamp `TIMESTAMPTZ(0)`, payer_account_id, hcs_sequence_number `BIGINT` (unique), recorded_at | One row per anchored event |
+
+- **No stored payload hash.** `parcel_hash` is only the lookup key. Verification recomputes both
+  hashes from the content columns.
+- **Round-trip safety.** `NUMERIC(10,2)` comes back from `pg` as a fixed-scale string (`"142.50"`)
+  and `TIMESTAMPTZ(0)` as an instant, so the canonical builder rebuilds identical bytes. The test
+  suite proves this under four different session time zones.
+- **One topic per database.** `hcs_sequence_number` is unique across the table, which matches one
+  topic per deployment.
+
+### Write API
+
+Both endpoints require `Authorization: Bearer $SUBMITTER_API_TOKEN`. The server co-signs
+submissions, so an open write endpoint would let anyone write to the topic through it.
+
+| Endpoint                               | Body                                                                                                     | Success                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `POST /api/parcels`                    | `{ parcel: { consignment, parties, bookingRef }, firstEvent: { status, location, carrier, timestamp } }` | `201 { parcelHash, firstEvent: { hcsSequenceNumber, payerAccountId } }` |
+| `POST /api/parcels/:parcelHash/events` | `{ status, location, carrier: { name, scacCode }, timestamp }`                                           | `201 { parcelHash, hcsSequenceNumber }`                                 |
+
+Errors use the shape `{ error: { code, message, path? } }`. The codes are:
+
+| HTTP status | Code                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| 400         | `VALIDATION_ERROR`                                                                                               |
+| 401         | `UNAUTHORIZED`                                                                                                   |
+| 404         | `PARCEL_NOT_FOUND`                                                                                               |
+| 409         | `PARCEL_EXISTS`                                                                                                  |
+| 502         | `SUBMISSION_FAILED` (nothing recorded)                                                                           |
+| 500         | `SERVER_MISCONFIGURED`                                                                                           |
+| 500         | `CACHE_WRITE_FAILED` (anchored at `hcsSequenceNumber`; the full content is written to the server log for replay) |
+
+Timestamps must include a UTC offset and have whole-second precision.
+
 ### `payer_account_id`
 
 `cargo_events.payer_account_id` is a convenience copy only. It is **not** covered by
@@ -164,10 +211,12 @@ by the server, at whole-second precision.
 | `npm run next:dev`      | Start the dev server                                       |
 | `npm run next:build`    | Production build                                           |
 | `npm run lint`          | ESLint + TypeScript type-check                             |
-| `npm run test`          | Vitest suite                                               |
+| `npm run test`          | Vitest: `unit` project + `db` project (needs Postgres)     |
 | `npm run format`        | Prettier                                                   |
 | `npm run keys:generate` | Generate dev submitter keypairs and print the `.env` lines |
 | `npm run topic:create`  | Create the HCS topic with the threshold submit key         |
+| `npm run db:migrate`    | Apply migrations (`-- --down` rolls back the latest)       |
+| `npm run db:seed`       | Anchor a demo parcel and its journey on HCS, then cache it |
 
 ## License
 
