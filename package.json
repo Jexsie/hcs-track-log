@@ -19,7 +19,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test --workspace=@hcs-track-log/nextjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "topic:create": "npm run topic:create --workspace=@hcs-track-log/nextjs",
+    "keys:generate": "npm run keys:generate --workspace=@hcs-track-log/nextjs --"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
@@ -39,5 +41,8 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.9",
     "typescript-eslint": "^8.70.1"
+  },
+  "overrides": {
+    "ws": "^8.21.3"
   }
 }

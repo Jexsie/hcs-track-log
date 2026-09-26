@@ -31,9 +31,10 @@ This template supports **npm only**.
 ## Setup
 
 ```bash
-cp .env.example .env        # fill in operator + submitter keys
-docker compose up -d        # start Postgres
 npm install
+cp .env.example .env        # fill in HEDERA_OPERATOR_ID / HEDERA_OPERATOR_KEY
+npm run keys:generate       # dev only: prints submitter key lines to paste into .env
+docker compose up -d        # start Postgres
 npm run db:migrate          # create tables
 npm run topic:create        # create the multi-sig HCS topic; put the id in HCS_TOPIC_ID
 npm run next:dev            # http://localhost:3000
@@ -104,6 +105,53 @@ event's `location`), the recomputed hash no longer matches the on-chain `payload
 UI flags that event as **tampered**. Checking a stored hash against the chain would prove
 nothing about the content.
 
+### Configuring the multi-signature submit key
+
+The topic's **submit key** is a threshold `KeyList`. Hedera rejects any message that lacks
+enough valid signatures (`INVALID_SIGNATURE`), so the network enforces this, not the app.
+
+1. **Collect submitter public keys.** Each authorized party generates its own keypair and shares
+   only the public key. For local development, `npm run keys:generate -- --count 3 --threshold 2`
+   prints a ready-made set.
+2. **Configure `.env`:**
+   - `HCS_SUBMIT_PUBLIC_KEYS`: every authorized public key, comma-separated (DER, or `0x`-hex ECDSA).
+   - `HCS_SUBMIT_THRESHOLD`: signatures required per message. At least 2 and at most the number of
+     keys. A threshold of 1 is refused, because it would not be multi-signature.
+   - `HCS_SUBMIT_SIGNER_KEYS`: the private keys this server co-signs with. At startup the server
+     checks they meet the threshold, before any fee is paid, and refuses to start otherwise.
+3. **Create the topic:** `npm run topic:create`. This builds the `KeyList`, creates the topic, and
+   then reads the topic back with `TopicInfoQuery` to confirm that the on-chain submit key matches.
+   Put the printed id in `HCS_TOPIC_ID`.
+
+The topic is created **without an admin key**, so it is immutable and no single party can replace
+the submit key later. To rotate signers, create a new topic.
+
+> **Deployment note.** If one server holds `threshold` private keys, that server is effectively
+> one party. For real separation of duties, keep the keys with different parties and collect their
+> signatures on each frozen `TopicMessageSubmitTransaction`. See
+> `lib/hedera/hcs-submitter.ts#prepare` for where to split signing out.
+
+To prove enforcement against the live network (this costs a few testnet cents):
+
+```bash
+RUN_TESTNET_TESTS=1 npm run test
+```
+
+This creates a 2-of-3 topic and checks that a message signed by one submitter is rejected with
+`INVALID_SIGNATURE` while a message signed by two is accepted.
+
+### Write-path failure modes
+
+| Failure                                     | Ledger   | Postgres | Error                                                                                      |
+| ------------------------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
+| Invalid input, unknown or duplicate parcel  | nothing  | nothing  | `ValidationError` / `ParcelNotFoundError` / `ParcelExistsError`                            |
+| Submission rejected or network error        | nothing  | nothing  | `SubmissionFailedError`                                                                    |
+| Consensus OK, then the database write fails | anchored | missing  | `DerivedWriteError` (carries the sequence number and content so the insert can be retried) |
+
+A parcel is written to Postgres together with its first event, and only after that event reaches
+consensus. Every cached parcel is therefore anchored on the ledger. `createdAt` is always assigned
+by the server, at whole-second precision.
+
 ### `payer_account_id`
 
 `cargo_events.payer_account_id` is a convenience copy only. It is **not** covered by
@@ -111,13 +159,15 @@ nothing about the content.
 
 ## Scripts
 
-| Command              | Purpose                        |
-| -------------------- | ------------------------------ |
-| `npm run next:dev`   | Start the dev server           |
-| `npm run next:build` | Production build               |
-| `npm run lint`       | ESLint + TypeScript type-check |
-| `npm run test`       | Vitest suite                   |
-| `npm run format`     | Prettier                       |
+| Command                 | Purpose                                                    |
+| ----------------------- | ---------------------------------------------------------- |
+| `npm run next:dev`      | Start the dev server                                       |
+| `npm run next:build`    | Production build                                           |
+| `npm run lint`          | ESLint + TypeScript type-check                             |
+| `npm run test`          | Vitest suite                                               |
+| `npm run format`        | Prettier                                                   |
+| `npm run keys:generate` | Generate dev submitter keypairs and print the `.env` lines |
+| `npm run topic:create`  | Create the HCS topic with the threshold submit key         |
 
 ## License
 

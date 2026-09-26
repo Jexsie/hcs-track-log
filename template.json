@@ -68,6 +68,10 @@
               "text": "cp .env.example .env"
             },
             {
+              "label": "Dev only: generate a 2-of-3 set of submitter keys and paste the printed lines into .env",
+              "command": "{run:keys:generate}"
+            },
+            {
               "label": "Get a testnet account",
               "url": "https://portal.hedera.com/"
             }
