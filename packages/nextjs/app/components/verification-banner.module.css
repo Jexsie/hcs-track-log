@@ -1,0 +1,115 @@
+.banner {
+  position: sticky;
+  top: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.08);
+}
+
+.banner strong {
+  display: block;
+}
+
+.banner p {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.pending strong {
+  color: var(--accent);
+}
+
+.verified {
+  border-color: var(--ok);
+  background: var(--ok-bg);
+}
+
+.verified strong {
+  color: var(--ok);
+}
+
+.tampered {
+  border: 2px solid var(--danger);
+  background: var(--danger-bg);
+}
+
+.tampered strong {
+  color: var(--danger);
+}
+
+.tampered p {
+  color: var(--fg);
+}
+
+.unavailable {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.unavailable strong {
+  color: var(--warn);
+}
+
+.pulse {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.2s ease-out infinite;
+}
+
+.scan {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 35%;
+  background: var(--accent);
+  animation: scan 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .scan {
+    animation: none;
+  }
+}
+
+.retry {
+  margin-left: auto;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}

@@ -12,7 +12,8 @@
     "topic:create": "tsx scripts/create-topic.ts",
     "keys:generate": "tsx scripts/generate-keys.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "verify": "tsx scripts/verify.ts"
   },
   "dependencies": {
     "@hiero-ledger/sdk": "^2.88.0",

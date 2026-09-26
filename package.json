@@ -23,7 +23,8 @@
     "topic:create": "npm run topic:create --workspace=@hcs-track-log/nextjs",
     "keys:generate": "npm run keys:generate --workspace=@hcs-track-log/nextjs --",
     "db:migrate": "npm run db:migrate --workspace=@hcs-track-log/nextjs --",
-    "db:seed": "npm run db:seed --workspace=@hcs-track-log/nextjs"
+    "db:seed": "npm run db:seed --workspace=@hcs-track-log/nextjs",
+    "verify": "npm run verify --workspace=@hcs-track-log/nextjs --"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [

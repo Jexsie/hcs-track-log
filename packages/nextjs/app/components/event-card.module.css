@@ -1,0 +1,172 @@
+.item {
+  position: relative;
+  padding-left: 32px;
+  list-style: none;
+}
+
+.item::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: -16px;
+  width: 2px;
+  background: var(--border);
+}
+
+.item:last-child::before {
+  bottom: auto;
+  height: 24px;
+}
+
+.dot {
+  position: absolute;
+  left: 3px;
+  top: 20px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--muted);
+}
+
+.verified .dot {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+.tampered .dot {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.unavailable .dot {
+  border-color: var(--warn);
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.tampered .card {
+  border: 2px solid var(--danger);
+}
+
+/* "Verifying" sheen over cards still being checked. */
+.pending .card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, var(--sheen) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: sheen 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending .card::after {
+    animation: none;
+    transform: none;
+    opacity: 0.4;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.location {
+  margin: 4px 0 12px;
+  color: var(--muted);
+}
+
+.meta,
+.proof {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.meta dt,
+.hash dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.meta dd,
+.hash dd {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.proof {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.hash dd {
+  font-family: var(--mono);
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+.scac {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.warning {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.warning p {
+  margin: 6px 0 0;
+  color: var(--fg);
+}
+
+.warning a {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.unavailableNote {
+  margin: 12px 0 0;
+  color: var(--warn);
+  font-size: 0.9rem;
+}

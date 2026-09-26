@@ -60,63 +60,83 @@ on-chain anchor.
 
 ## Key paths
 
-| Path                                                           | Purpose                                                                                         |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `CLAUDE.md`                                                    | Project standards and non-negotiable invariants                                                 |
-| `template.json`                                                | scaffold-hbar manifest: capabilities, env vars, onboarding outro                                |
-| `.env.example`                                                 | Placeholder environment configuration                                                           |
-| `eslint.config.mjs`                                            | ESLint 9 flat config (Next + typescript-eslint strict, no `any`)                                |
-| `.husky/pre-commit`                                            | Runs lint-staged (ESLint + Prettier on staged files)                                            |
-| `.github/workflows/ci.yml`                                     | CI: install → lint → test → build                                                               |
-| `packages/nextjs/app/layout.tsx`                               | Root layout and metadata                                                                        |
-| `packages/nextjs/app/page.tsx`                                 | Home page                                                                                       |
-| `packages/nextjs/vitest.config.ts`                             | Test runner configuration                                                                       |
-| `packages/nextjs/lib/canonical/normalize.ts`                   | Primitive normalizers: trim + NFC text, positive int, fixed-scale decimal, ISO-8601 Z timestamp |
-| `packages/nextjs/lib/canonical/shape.ts`                       | Object/field readers that reject unknown keys and attach field paths to errors                  |
-| `packages/nextjs/lib/canonical/canonicalize.ts`                | The single deterministic serializer (sorted keys, compact, UTF-8)                               |
-| `packages/nextjs/lib/canonical/event.ts`                       | **Shared event canonical builder** used by submit and verify                                    |
-| `packages/nextjs/lib/canonical/parcel.ts`                      | **Shared parcel canonical builder** used by creation and search                                 |
-| `packages/nextjs/lib/canonical/errors.ts`                      | `FieldError` / `ValidationError`                                                                |
-| `packages/nextjs/lib/hashing/sha256.ts`                        | WebCrypto SHA-256 hex, hash format check, tracking-ID input normalization                       |
-| `packages/nextjs/lib/hashing/payload-hash.ts`                  | `computePayloadHash`: per-event commitment                                                      |
-| `packages/nextjs/lib/hashing/parcel-hash.ts`                   | `computeParcelHash`: public tracking ID                                                         |
-| `packages/nextjs/lib/envelope/envelope.ts`                     | `HcsMessageEnvelope` build / serialize / strict parse                                           |
-| `packages/nextjs/test/fixtures/records.ts`                     | Reference event and parcel with independently computed digests                                  |
-| `packages/nextjs/lib/config/env.ts`                            | Typed readers for every env var (fail with the variable's name)                                 |
-| `packages/nextjs/lib/config/load-env.ts`                       | Loads the repo-root `.env` for CLI scripts                                                      |
-| `packages/nextjs/lib/hedera/keys.ts`                           | Parse DER / 0x-hex ECDSA keys                                                                   |
-| `packages/nextjs/lib/hedera/client.ts`                         | Hedera client with the operator as fee payer                                                    |
-| `packages/nextjs/lib/hedera/submit-key.ts`                     | Threshold KeyList builder (≥2 of N), signer sufficiency check, on-chain key comparison          |
-| `packages/nextjs/lib/hedera/create-topic.ts`                   | Create the topic with the submit key (no admin key) and read it back to confirm                 |
-| `packages/nextjs/lib/hedera/hcs-submitter.ts`                  | `EnvelopeSubmitter` for HCS: freeze, co-sign, submit, wait for the SUCCESS receipt              |
-| `packages/nextjs/lib/tracking/ports.ts`                        | `EnvelopeSubmitter` / `TrackingStore` interfaces                                                |
-| `packages/nextjs/lib/tracking/anchor.ts`                       | Hash, build the envelope, submit. No DB I/O                                                     |
-| `packages/nextjs/lib/tracking/record-event.ts`                 | **HCS-first** event write: anchor, then insert                                                  |
-| `packages/nextjs/lib/tracking/register-parcel.ts`              | **HCS-first** parcel + first event registration                                                 |
-| `packages/nextjs/lib/tracking/errors.ts`                       | Write-path errors, incl. `DerivedWriteError` (anchored but not cached)                          |
-| `packages/nextjs/scripts/create-topic.ts`                      | `npm run topic:create`                                                                          |
-| `packages/nextjs/scripts/generate-keys.ts`                     | `npm run keys:generate`                                                                         |
-| `packages/nextjs/test/fakes.ts`                                | Controllable submitter + in-memory store for ordering tests                                     |
-| `packages/nextjs/test/integration/hcs.testnet.test.ts`         | Opt-in live proof of submit-key enforcement (`RUN_TESTNET_TESTS=1`)                             |
-| `docker-compose.yml`                                           | Postgres 18 for development and tests                                                           |
-| `docker/postgres/init/01-create-test-database.sql`             | Creates `hcs_track_log_test` on first start                                                     |
-| `packages/nextjs/migrations/1758873600000_initial-schema.sql`  | `parcels` / `cargo_events` schema (no payload hash column)                                      |
-| `packages/nextjs/lib/db/migrate.ts`                            | node-pg-migrate runner wrapper                                                                  |
-| `packages/nextjs/lib/db/pool.ts`                               | `pg` pool (default type parsers kept for lossless round-trip)                                   |
-| `packages/nextjs/lib/db/rows.ts`                               | Row types and mapping from columns to canonical-builder input                                   |
-| `packages/nextjs/lib/db/tracking-store.ts`                     | Derived writes (`TrackingStore`); parcel and first event in one transaction                     |
-| `packages/nextjs/lib/db/tracking-reader.ts`                    | Database-first reads: parcel and events in ledger order                                         |
-| `packages/nextjs/lib/hedera/submitter-from-env.ts`             | Builds the submitter from env and verifies the topic's submit key on-chain                      |
-| `packages/nextjs/lib/server/http.ts`                           | Bearer auth, JSON helpers, domain error → HTTP mapping, log serialization                       |
-| `packages/nextjs/lib/server/write-handlers.ts`                 | Write endpoints (lazy submitter, so bad requests never touch Hedera)                            |
-| `packages/nextjs/lib/server/services.ts`                       | Process-wide pool/submitter singletons and handler wiring                                       |
-| `packages/nextjs/app/api/parcels/route.ts`                     | `POST /api/parcels`                                                                             |
-| `packages/nextjs/app/api/parcels/[parcelHash]/events/route.ts` | `POST /api/parcels/:parcelHash/events`                                                          |
-| `packages/nextjs/scripts/migrate.ts`                           | `npm run db:migrate`                                                                            |
-| `packages/nextjs/scripts/seed.ts`                              | `npm run db:seed` (HCS-first demo data)                                                         |
-| `packages/nextjs/test/db/global-setup.ts`                      | Drops and recreates the `_test` schema, then runs migrations                                    |
-| `packages/nextjs/test/db/database.ts`                          | Test pool (optional session TimeZone), `_test` name guard, truncate                             |
-| `packages/nextjs/test/fixtures/parcels.ts`                     | Normalized parcel / recorded-event builders                                                     |
+| Path                                                           | Purpose                                                                                               |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `CLAUDE.md`                                                    | Project standards and non-negotiable invariants                                                       |
+| `template.json`                                                | scaffold-hbar manifest: capabilities, env vars, onboarding outro                                      |
+| `.env.example`                                                 | Placeholder environment configuration                                                                 |
+| `eslint.config.mjs`                                            | ESLint 9 flat config (Next + typescript-eslint strict, no `any`)                                      |
+| `.husky/pre-commit`                                            | Runs lint-staged (ESLint + Prettier on staged files)                                                  |
+| `.github/workflows/ci.yml`                                     | CI: install → lint → test → build                                                                     |
+| `packages/nextjs/app/layout.tsx`                               | Root layout and metadata                                                                              |
+| `packages/nextjs/app/page.tsx`                                 | Home page                                                                                             |
+| `packages/nextjs/vitest.config.ts`                             | Test runner configuration                                                                             |
+| `packages/nextjs/lib/canonical/normalize.ts`                   | Primitive normalizers: trim + NFC text, positive int, fixed-scale decimal, ISO-8601 Z timestamp       |
+| `packages/nextjs/lib/canonical/shape.ts`                       | Object/field readers that reject unknown keys and attach field paths to errors                        |
+| `packages/nextjs/lib/canonical/canonicalize.ts`                | The single deterministic serializer (sorted keys, compact, UTF-8)                                     |
+| `packages/nextjs/lib/canonical/event.ts`                       | **Shared event canonical builder** used by submit and verify                                          |
+| `packages/nextjs/lib/canonical/parcel.ts`                      | **Shared parcel canonical builder** used by creation and search                                       |
+| `packages/nextjs/lib/canonical/errors.ts`                      | `FieldError` / `ValidationError`                                                                      |
+| `packages/nextjs/lib/hashing/sha256.ts`                        | WebCrypto SHA-256 hex, hash format check, tracking-ID input normalization                             |
+| `packages/nextjs/lib/hashing/payload-hash.ts`                  | `computePayloadHash`: per-event commitment                                                            |
+| `packages/nextjs/lib/hashing/parcel-hash.ts`                   | `computeParcelHash`: public tracking ID                                                               |
+| `packages/nextjs/lib/envelope/envelope.ts`                     | `HcsMessageEnvelope` build / serialize / strict parse                                                 |
+| `packages/nextjs/test/fixtures/records.ts`                     | Reference event and parcel with independently computed digests                                        |
+| `packages/nextjs/lib/config/env.ts`                            | Typed readers for every env var (fail with the variable's name)                                       |
+| `packages/nextjs/lib/config/load-env.ts`                       | Loads the repo-root `.env` for CLI scripts                                                            |
+| `packages/nextjs/lib/hedera/keys.ts`                           | Parse DER / 0x-hex ECDSA keys                                                                         |
+| `packages/nextjs/lib/hedera/client.ts`                         | Hedera client with the operator as fee payer                                                          |
+| `packages/nextjs/lib/hedera/submit-key.ts`                     | Threshold KeyList builder (≥2 of N), signer sufficiency check, on-chain key comparison                |
+| `packages/nextjs/lib/hedera/create-topic.ts`                   | Create the topic with the submit key (no admin key) and read it back to confirm                       |
+| `packages/nextjs/lib/hedera/hcs-submitter.ts`                  | `EnvelopeSubmitter` for HCS: freeze, co-sign, submit, wait for the SUCCESS receipt                    |
+| `packages/nextjs/lib/tracking/ports.ts`                        | `EnvelopeSubmitter` / `TrackingStore` interfaces                                                      |
+| `packages/nextjs/lib/tracking/anchor.ts`                       | Hash, build the envelope, submit. No DB I/O                                                           |
+| `packages/nextjs/lib/tracking/record-event.ts`                 | **HCS-first** event write: anchor, then insert                                                        |
+| `packages/nextjs/lib/tracking/register-parcel.ts`              | **HCS-first** parcel + first event registration                                                       |
+| `packages/nextjs/lib/tracking/errors.ts`                       | Write-path errors, incl. `DerivedWriteError` (anchored but not cached)                                |
+| `packages/nextjs/scripts/create-topic.ts`                      | `npm run topic:create`                                                                                |
+| `packages/nextjs/scripts/generate-keys.ts`                     | `npm run keys:generate`                                                                               |
+| `packages/nextjs/test/fakes.ts`                                | Controllable submitter + in-memory store for ordering tests                                           |
+| `packages/nextjs/test/integration/hcs.testnet.test.ts`         | Opt-in live proof of submit-key enforcement (`RUN_TESTNET_TESTS=1`)                                   |
+| `docker-compose.yml`                                           | Postgres 18 for development and tests                                                                 |
+| `docker/postgres/init/01-create-test-database.sql`             | Creates `hcs_track_log_test` on first start                                                           |
+| `packages/nextjs/migrations/1758873600000_initial-schema.sql`  | `parcels` / `cargo_events` schema (no payload hash column)                                            |
+| `packages/nextjs/lib/db/migrate.ts`                            | node-pg-migrate runner wrapper                                                                        |
+| `packages/nextjs/lib/db/pool.ts`                               | `pg` pool (default type parsers kept for lossless round-trip)                                         |
+| `packages/nextjs/lib/db/rows.ts`                               | Row types and mapping from columns to canonical-builder input                                         |
+| `packages/nextjs/lib/db/tracking-store.ts`                     | Derived writes (`TrackingStore`); parcel and first event in one transaction                           |
+| `packages/nextjs/lib/db/tracking-reader.ts`                    | Database-first reads: parcel and events in ledger order                                               |
+| `packages/nextjs/lib/hedera/submitter-from-env.ts`             | Builds the submitter from env and verifies the topic's submit key on-chain                            |
+| `packages/nextjs/lib/server/http.ts`                           | Bearer auth, JSON helpers, domain error → HTTP mapping, log serialization                             |
+| `packages/nextjs/lib/server/write-handlers.ts`                 | Write endpoints (lazy submitter, so bad requests never touch Hedera)                                  |
+| `packages/nextjs/lib/server/services.ts`                       | Process-wide pool/submitter singletons and handler wiring                                             |
+| `packages/nextjs/app/api/parcels/route.ts`                     | `POST /api/parcels`                                                                                   |
+| `packages/nextjs/app/api/parcels/[parcelHash]/events/route.ts` | `POST /api/parcels/:parcelHash/events`                                                                |
+| `packages/nextjs/scripts/migrate.ts`                           | `npm run db:migrate`                                                                                  |
+| `packages/nextjs/scripts/seed.ts`                              | `npm run db:seed` (HCS-first demo data)                                                               |
+| `packages/nextjs/test/db/global-setup.ts`                      | Drops and recreates the `_test` schema, then runs migrations                                          |
+| `packages/nextjs/test/db/database.ts`                          | Test pool (optional session TimeZone), `_test` name guard, truncate                                   |
+| `packages/nextjs/test/fixtures/parcels.ts`                     | Normalized parcel / recorded-event builders                                                           |
+| `packages/nextjs/lib/mirror/mirror-client.ts`                  | Mirror node client: one message by sequence number, paginated listing (same-origin `links.next` only) |
+| `packages/nextjs/lib/verify/verdicts.ts`                       | `EventVerdict` / `ParcelVerdict` / `TamperReason`                                                     |
+| `packages/nextjs/lib/verify/verify-event.ts`                   | **The verifier**: recompute payloadHash from content → fetch anchor → compare                         |
+| `packages/nextjs/lib/verify/verify-timeline.ts`                | Parcel recompute check + bounded-concurrency event verification with progress callback                |
+| `packages/nextjs/lib/verify/verify-topic.ts`                   | CLI core: verify all parcels and scan the topic for uncached / foreign messages                       |
+| `packages/nextjs/lib/verify/tamper.db.test.ts`                 | **Headline test**: edit a location in Postgres → TAMPERED; untouched events verify                    |
+| `packages/nextjs/lib/timeline/dto.ts`                          | Content-only JSON shape served to clients (no hashes except the tracking ID)                          |
+| `packages/nextjs/lib/timeline/format.ts`                       | Deterministic UTC / hash display formatting (identical on server and client)                          |
+| `packages/nextjs/lib/server/read-handlers.ts`                  | `loadTimeline` + `GET /api/parcels/:parcelHash`                                                       |
+| `packages/nextjs/app/api/parcels/[parcelHash]/route.ts`        | `GET /api/parcels/:parcelHash`                                                                        |
+| `packages/nextjs/app/page.tsx`                                 | Home: search form and how verification works                                                          |
+| `packages/nextjs/app/track/[parcelHash]/page.tsx`              | Database-first timeline page (server)                                                                 |
+| `packages/nextjs/app/components/tracking-view.tsx`             | Client view: renders the timeline and streams in verdicts                                             |
+| `packages/nextjs/app/components/use-verification.ts`           | In-browser verification hook (recompute + mirror node, retry)                                         |
+| `packages/nextjs/app/components/verification-banner.tsx`       | Animated "Verifying live ledger integrity…" overlay and result summary                                |
+| `packages/nextjs/app/components/event-card.tsx`                | Timeline row: sequence number, badge, mirror link, security warning                                   |
+| `packages/nextjs/app/components/parcel-summary.tsx`            | Parcel details and tracking-ID recompute check                                                        |
+| `packages/nextjs/app/components/search-form.tsx`               | Tracking-ID input with validation                                                                     |
+| `packages/nextjs/scripts/verify.ts`                            | `npm run verify`                                                                                      |
+| `packages/nextjs/test/fake-ledger.ts`                          | In-memory topic serving mirror-node-shaped HTTP responses                                             |
 
 ## Commands
 

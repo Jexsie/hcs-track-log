@@ -23,6 +23,13 @@ export class PostgresTrackingReader {
     return row ? toStoredParcel(row) : null;
   }
 
+  async listParcelHashes(): Promise<string[]> {
+    const { rows } = await this.pool.query<{ parcel_hash: string }>(
+      "SELECT parcel_hash FROM parcels ORDER BY created_at, parcel_hash",
+    );
+    return rows.map((r) => r.parcel_hash);
+  }
+
   async listEvents(parcelHash: string): Promise<StoredEvent[]> {
     const { rows } = await this.pool.query<CargoEventRow>(
       `SELECT id, parcel_hash, status, location, carrier_name, carrier_scac_code, event_timestamp,
