@@ -11,8 +11,12 @@ export function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && SHA256_HEX.test(value);
 }
 
-/** Normalize a user-typed tracking ID (whitespace, optional 0x, any case). Null if malformed. */
-export function normalizeHashInput(raw: string): string | null {
-  const value = raw.trim().replace(/^0x/i, "").toLowerCase();
+/**
+ * Accept a tracking ID only as typed: surrounding whitespace (a paste artifact) is trimmed, and
+ * nothing else is changed. No case folding, no 0x stripping, no prefix or fuzzy matching, so an
+ * ID that is not exactly right simply finds nothing. Returns null for anything else.
+ */
+export function parseTrackingId(raw: string): string | null {
+  const value = raw.trim();
   return isSha256Hex(value) ? value : null;
 }

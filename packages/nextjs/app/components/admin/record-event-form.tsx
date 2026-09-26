@@ -15,7 +15,7 @@ import {
   toEventPayload,
   validateEventForm,
 } from "@/lib/admin/validation";
-import { normalizeHashInput } from "@/lib/hashing/sha256";
+import { parseTrackingId } from "@/lib/hashing/sha256";
 import type { LedgerLinks } from "@/lib/server/ledger-links";
 import { envelopeFor } from "./envelope-preview";
 import { EventFields } from "./event-fields";
@@ -80,7 +80,7 @@ export function RecordEventForm({
   }, []);
 
   useEffect(() => {
-    const hash = normalizeHashInput(initialParcelHash);
+    const hash = parseTrackingId(initialParcelHash);
     if (!hash) return;
     let cancelled = false;
     fetchParcelSummary(hash).then((result) => {
@@ -97,16 +97,18 @@ export function RecordEventForm({
   }, [initialParcelHash]);
 
   function onHashBlur() {
-    const hash = normalizeHashInput(rawHash);
-    setHashError(rawHash && !hash ? "must be 64 hexadecimal characters" : undefined);
+    const hash = parseTrackingId(rawHash);
+    setHashError(
+      rawHash && !hash ? "must be exactly 64 lower-case hexadecimal characters" : undefined,
+    );
     if (hash) void look(hash);
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const parcelHash = normalizeHashInput(rawHash);
+    const parcelHash = parseTrackingId(rawHash);
     const eErrors = validateEventForm(event);
-    setHashError(parcelHash ? undefined : "must be 64 hexadecimal characters");
+    setHashError(parcelHash ? undefined : "must be exactly 64 lower-case hexadecimal characters");
     setErrors(eErrors);
     setFailure(null);
     if (!parcelHash || Object.keys(eErrors).length) return;
@@ -141,7 +143,7 @@ export function RecordEventForm({
   function another() {
     setOutcome(null);
     setEvent(EMPTY_EVENT_FORM);
-    const hash = normalizeHashInput(rawHash);
+    const hash = parseTrackingId(rawHash);
     if (hash) void look(hash);
   }
 

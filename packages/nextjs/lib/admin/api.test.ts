@@ -72,14 +72,17 @@ describe("registerParcel", () => {
 });
 
 describe("recordEvent", () => {
-  it("POSTs to the parcel's events endpoint", async () => {
+  it("POSTs the tracking ID and event in the body to /api/events", async () => {
     const { calls, fetchImpl } = recorder(() =>
       Response.json({ parcelHash: HASH, hcsSequenceNumber: "8" }, { status: 201 }),
     );
     const result = await recordEvent(TOKEN, HASH, { status: "Delivered" }, fetchImpl);
     expect(result).toEqual({ ok: true, data: { parcelHash: HASH, hcsSequenceNumber: "8" } });
-    expect(calls[0]?.url).toBe(`/api/parcels/${HASH}/events`);
-    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ status: "Delivered" });
+    expect(calls[0]?.url).toBe("/api/events");
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      parcelHash: HASH,
+      event: { status: "Delivered" },
+    });
   });
 });
 

@@ -95,8 +95,7 @@ describe("recordEvent handler", () => {
     const { parcelHash } = (await created.json()) as { parcelHash: string };
 
     const res = await handlers().recordEvent(
-      post({ ...referenceEvent, status: "Delivered" }),
-      parcelHash,
+      post({ parcelHash, event: { ...referenceEvent, status: "Delivered" } }),
     );
     expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ parcelHash, hcsSequenceNumber: "1" });
@@ -104,7 +103,10 @@ describe("recordEvent handler", () => {
   });
 
   it("returns 404 for an unknown parcel and 502 when the ledger rejects the event", async () => {
-    expect((await handlers().recordEvent(post(referenceEvent), "c".repeat(64))).status).toBe(404);
+    expect(
+      (await handlers().recordEvent(post({ parcelHash: "c".repeat(64), event: referenceEvent })))
+        .status,
+    ).toBe(404);
 
     const created = await handlers().registerParcel(
       post({ parcel: parcelForm, firstEvent: referenceEvent }),
@@ -112,7 +114,7 @@ describe("recordEvent handler", () => {
     const { parcelHash } = (await created.json()) as { parcelHash: string };
     const res = await handlers(
       async () => new InstantSubmitter(log, new Error("INVALID_SIGNATURE")),
-    ).recordEvent(post(referenceEvent), parcelHash);
+    ).recordEvent(post({ parcelHash, event: referenceEvent }));
     expect(res.status).toBe(502);
     expect(store.events).toHaveLength(1);
   });

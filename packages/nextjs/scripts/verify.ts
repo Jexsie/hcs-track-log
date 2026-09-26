@@ -11,7 +11,7 @@ import { readDatabaseUrl, readMirrorNodeUrl, readTopicId } from "@/lib/config/en
 import { loadRootEnv } from "@/lib/config/load-env";
 import { createPool } from "@/lib/db/pool";
 import { PostgresTrackingReader } from "@/lib/db/tracking-reader";
-import { normalizeHashInput } from "@/lib/hashing/sha256";
+import { parseTrackingId } from "@/lib/hashing/sha256";
 import { createMirrorClient } from "@/lib/mirror/mirror-client";
 import type { TimelineReport } from "@/lib/verify/verify-timeline";
 import { verifyTopic } from "@/lib/verify/verify-topic";
@@ -46,7 +46,7 @@ async function main(): Promise<number> {
     },
   });
   const topicId = values.topic ?? readTopicId();
-  const parcelHash = values.parcel === undefined ? undefined : normalizeHashInput(values.parcel);
+  const parcelHash = values.parcel === undefined ? undefined : parseTrackingId(values.parcel);
   if (parcelHash === null) throw new Error("--parcel must be a 64-character hex tracking ID");
 
   const mirror = createMirrorClient({ baseUrl: values.mirror ?? readMirrorNodeUrl(), topicId });

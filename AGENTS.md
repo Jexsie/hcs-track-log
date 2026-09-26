@@ -114,7 +114,7 @@ on-chain anchor.
 | `packages/nextjs/lib/server/write-handlers.ts`                  | Write endpoints (lazy submitter, so bad requests never touch Hedera)                                                                          |
 | `packages/nextjs/lib/server/services.ts`                        | Process-wide pool/submitter singletons and handler wiring                                                                                     |
 | `packages/nextjs/app/api/parcels/route.ts`                      | `POST /api/parcels`                                                                                                                           |
-| `packages/nextjs/app/api/parcels/[parcelHash]/events/route.ts`  | `POST /api/parcels/:parcelHash/events`                                                                                                        |
+| `packages/nextjs/app/api/events/route.ts`                       | `POST /api/events` (`{ parcelHash, event }` in the body)                                                                                      |
 | `packages/nextjs/scripts/migrate.ts`                            | `npm run db:migrate`                                                                                                                          |
 | `packages/nextjs/scripts/seed.ts`                               | `npm run db:seed` (HCS-first demo data)                                                                                                       |
 | `packages/nextjs/test/db/global-setup.ts`                       | Drops and recreates the `_test` schema, then runs migrations                                                                                  |
@@ -127,14 +127,15 @@ on-chain anchor.
 | `packages/nextjs/lib/verify/verify-topic.ts`                    | CLI core: verify all parcels and scan the topic for uncached / foreign messages                                                               |
 | `packages/nextjs/lib/verify/tamper.db.test.ts`                  | **Headline test**: edit a location in Postgres → TAMPERED; untouched events verify                                                            |
 | `packages/nextjs/lib/timeline/dto.ts`                           | Content-only JSON shape served to clients (no hashes except the tracking ID)                                                                  |
+| `packages/nextjs/lib/timeline/lookup-client.ts`                 | Browser lookup client shared by the public page and the admin console                                                                         |
 | `packages/nextjs/lib/timeline/format.ts`                        | Deterministic UTC / hash display formatting (identical on server and client)                                                                  |
-| `packages/nextjs/lib/server/read-handlers.ts`                   | `loadTimeline` + `GET /api/parcels/:parcelHash`                                                                                               |
-| `packages/nextjs/app/api/parcels/[parcelHash]/route.ts`         | `GET /api/parcels/:parcelHash`                                                                                                                |
-| `packages/nextjs/app/(public)/track/[parcelHash]/page.tsx`      | Database-first timeline page (server)                                                                                                         |
+| `packages/nextjs/lib/server/read-handlers.ts`                   | `loadTimeline` + `POST /api/parcels/lookup` (exact ID in the body, uniform 404, `no-store`)                                                   |
+| `packages/nextjs/app/api/parcels/lookup/route.ts`               | `POST /api/parcels/lookup`                                                                                                                    |
+| `packages/nextjs/app/components/track-search.tsx`               | Public search: POSTs the tracking ID and renders the verified timeline in place (no ID in the URL)                                            |
 | `packages/nextjs/app/(public)/layout.tsx`                       | Public header (blue theme)                                                                                                                    |
 | `packages/nextjs/app/admin/layout.tsx`                          | Administrator console shell: violet `data-theme="admin"`, nav, token panel, `noindex`                                                         |
 | `packages/nextjs/app/admin/parcels/new/page.tsx`                | Register-parcel form page                                                                                                                     |
-| `packages/nextjs/app/admin/events/new/page.tsx`                 | Record-event form page (`?parcel=<trackingId>` prefill)                                                                                       |
+| `packages/nextjs/app/admin/events/new/page.tsx`                 | Record-event form page                                                                                                                        |
 | `packages/nextjs/app/components/admin/register-parcel-form.tsx` | Parcel + first-event form → `POST /api/parcels`                                                                                               |
 | `packages/nextjs/app/components/admin/record-event-form.tsx`    | Parcel lookup + event form → `POST /api/parcels/:hash/events`                                                                                 |
 | `packages/nextjs/app/components/admin/event-fields.tsx`         | Shared event fieldset (status, location, carrier, SCAC, local time)                                                                           |
@@ -153,7 +154,6 @@ on-chain anchor.
 | `packages/nextjs/app/components/verification-banner.tsx`        | Animated "Verifying live ledger integrity…" overlay and result summary                                                                        |
 | `packages/nextjs/app/components/event-card.tsx`                 | Timeline row: sequence number, badge, mirror link, security warning                                                                           |
 | `packages/nextjs/app/components/parcel-summary.tsx`             | Parcel details and tracking-ID recompute check                                                                                                |
-| `packages/nextjs/app/components/search-form.tsx`                | Tracking-ID input with validation                                                                                                             |
 | `packages/nextjs/scripts/verify.ts`                             | `npm run verify`                                                                                                                              |
 | `packages/nextjs/test/fake-ledger.ts`                           | In-memory topic serving mirror-node-shaped HTTP responses                                                                                     |
 

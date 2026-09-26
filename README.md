@@ -105,9 +105,15 @@ No statuses, locations, carriers or descriptions go on-chain.
 
 ### Search and verify
 
-1. Open `/`, paste a tracking ID, and you land on `/track/<parcelHash>`. The server renders the
-   whole timeline straight from Postgres (database-first). Each row shows its
-   `hcs_sequence_number`.
+1. Open `/` and enter a tracking ID. It is sent in a `POST /api/parcels/lookup` request **body**,
+   never in the URL, so it stays out of the address bar, browser history, server access logs and
+   `Referer` headers. The timeline renders in place, straight from Postgres (database-first).
+   Each row shows its `hcs_sequence_number`.
+   - **Lookup is exact.** The ID must match character for character. Only surrounding whitespace
+     from a paste is trimmed. Upper case, a `0x` prefix, a partial ID or SQL wildcards find nothing,
+     and every miss gets the same "no parcel" answer. The query is an equality match on the
+     `parcel_hash` unique index.
+   - Because the ID is not in the URL, reloading the page clears the result and nothing can be bookmarked or shared by link. Search again instead.
 2. An animated **"Verifying live ledger integrity…"** overlay appears while **your browser**
    checks each event. Public mirror nodes allow cross-origin requests, so the check does not
    depend on trusting this app's server. For each event, the browser:
@@ -123,8 +129,9 @@ No statuses, locations, carriers or descriptions go on-chain.
      `wrong-parcel`, `invalid-content`, `not-an-envelope`, `no-anchor`.
    - **Ledger unreachable**, with a retry button.
 
-Every hash on the page is recomputed; none is read from storage. `GET /api/parcels/:parcelHash`
-returns the same stored content as JSON, so any client can verify it independently.
+Every hash on the page is recomputed; none is read from storage. `POST /api/parcels/lookup` with
+`{ "trackingId": "<id>" }` returns the same stored content as JSON (`Cache-Control: no-store`), so
+any client can verify it independently.
 
 ### Verify from the command line
 
@@ -150,8 +157,9 @@ public tracker.
   and type, gross mass, volume), the parties, the booking reference, and the first event. The
   server assigns `createdAt`, derives the tracking ID, and anchors the event on HCS before saving
   anything.
-- **`/admin/events/new?parcel=<trackingId>`:** record a status update. The form looks the parcel
-  up first, so you can confirm it is the right one.
+- **`/admin/events/new`:** record a status update. Paste the exact tracking ID; the form looks the
+  parcel up first, so you can confirm it is the right one. After registering a parcel,
+  **Record next event** opens this form in place with the ID carried in page state, not the URL.
 
 How the console behaves:
 
@@ -258,10 +266,10 @@ latest migration, run `npm run db:migrate -- --down`.
 Both endpoints require `Authorization: Bearer $SUBMITTER_API_TOKEN`. The server co-signs
 submissions, so an open write endpoint would let anyone write to the topic through it.
 
-| Endpoint                               | Body                                                                                                     | Success                                                                 |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `POST /api/parcels`                    | `{ parcel: { consignment, parties, bookingRef }, firstEvent: { status, location, carrier, timestamp } }` | `201 { parcelHash, firstEvent: { hcsSequenceNumber, payerAccountId } }` |
-| `POST /api/parcels/:parcelHash/events` | `{ status, location, carrier: { name, scacCode }, timestamp }`                                           | `201 { parcelHash, hcsSequenceNumber }`                                 |
+| Endpoint            | Body                                                                                                     | Success                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `POST /api/parcels` | `{ parcel: { consignment, parties, bookingRef }, firstEvent: { status, location, carrier, timestamp } }` | `201 { parcelHash, firstEvent: { hcsSequenceNumber, payerAccountId } }` |
+| `POST /api/events`  | `{ parcelHash, event: { status, location, carrier: { name, scacCode }, timestamp } }`                    | `201 { parcelHash, hcsSequenceNumber }`                                 |
 
 Errors use the shape `{ error: { code, message, path? } }`. The codes are:
 

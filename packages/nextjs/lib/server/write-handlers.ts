@@ -53,10 +53,11 @@ export function createWriteHandlers({ store, getSubmitter, apiToken, log }: Writ
         );
       }),
 
-    /** POST /api/parcels/:parcelHash/events  { status, location, carrier, timestamp } */
-    recordEvent: (request: Request, parcelHash: string) =>
+    /** POST /api/events  { parcelHash, event: { status, location, carrier, timestamp } } */
+    recordEvent: (request: Request) =>
       guarded(request, async (body) => {
-        const recorded = await recordCargoEvent({ parcelHash, event: body }, { submitter, store });
+        const { parcelHash, event } = (body ?? {}) as { parcelHash?: unknown; event?: unknown };
+        const recorded = await recordCargoEvent({ parcelHash, event }, { submitter, store });
         return jsonResponse(
           { parcelHash: recorded.parcelHash, hcsSequenceNumber: recorded.hcsSequenceNumber },
           201,

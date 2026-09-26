@@ -1,5 +1,7 @@
 /** Browser client for the write API, used by the admin console. */
 
+import { lookupTimeline } from "@/lib/timeline/lookup-client";
+
 export type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; code: string; message: string; path?: string };
@@ -78,12 +80,7 @@ export function recordEvent(
   event: unknown,
   fetchImpl: typeof fetch = defaultFetch,
 ): Promise<ApiResult<RecordEventResponse>> {
-  return call(`/api/parcels/${parcelHash}/events`, post(token, event), fetchImpl);
-}
-
-interface TimelineShape {
-  parcel: { consignment: { description: string } };
-  events: { hcsSequenceNumber: string; content: { status: string; location: string } }[];
+  return call("/api/events", post(token, { parcelHash, event }), fetchImpl);
 }
 
 /** Look a parcel up before recording an event, so admins can confirm they have the right one. */
@@ -91,13 +88,18 @@ export async function fetchParcelSummary(
   parcelHash: string,
   fetchImpl: typeof fetch = defaultFetch,
 ): Promise<ApiResult<ParcelSummary>> {
-  const result = await call<TimelineShape>(
-    `/api/parcels/${parcelHash}`,
-    { method: "GET" },
-    fetchImpl,
-  );
-  if (!result.ok) return result;
-  const { parcel, events } = result.data;
+  const result = await lookupTimeline(parcelHash, fetchImpl);
+  if (result.status === "not-found") {
+    return {
+      ok: false,
+      status: 404,
+      code: "PARCEL_NOT_FOUND",
+      message: "No parcel has exactly this tracking ID.",
+    };
+  }
+  if (result.status === "error")
+    return { ok: false, status: 0, code: "LOOKUP_FAILED", message: result.message };
+  const { parcel, events } = result.timeline;
   const last = events.at(-1);
   return {
     ok: true,

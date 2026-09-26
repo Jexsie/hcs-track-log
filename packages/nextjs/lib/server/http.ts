@@ -37,10 +37,14 @@ export async function readJsonBody(request: Request): Promise<unknown> {
 const bigintAsString = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(
+  data: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(data, bigintAsString), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
   });
 }
 
@@ -60,7 +64,8 @@ export function errorResponse(error: unknown, log: Logger = console.error): Resp
   if (error instanceof ValidationError) {
     return failure(400, "VALIDATION_ERROR", error.message, { path: error.path });
   }
-  if (error instanceof ParcelNotFoundError) return failure(404, "PARCEL_NOT_FOUND", error.message);
+  if (error instanceof ParcelNotFoundError)
+    return failure(404, "PARCEL_NOT_FOUND", "no parcel with this tracking ID");
   if (error instanceof ParcelExistsError) return failure(409, "PARCEL_EXISTS", error.message);
   if (error instanceof SubmissionFailedError) {
     log("HCS submission failed", error.cause);

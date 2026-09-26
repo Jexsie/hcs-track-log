@@ -17,6 +17,7 @@ import {
 import type { LedgerLinks } from "@/lib/server/ledger-links";
 import { envelopeFor } from "./envelope-preview";
 import { EventFields } from "./event-fields";
+import { RecordEventForm } from "./record-event-form";
 import { Field, FormSection } from "./field";
 import { type SubmissionOutcome, SubmissionResult } from "./submission-result";
 import { SubmitButton, SubmitError } from "./submit-feedback";
@@ -34,6 +35,7 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [outcome, setOutcome] = useState<SubmissionOutcome | null>(null);
+  const [nextEventFor, setNextEventFor] = useState<string | null>(null);
 
   const set = (key: keyof ParcelForm) => (e: { target: { value: string } }) =>
     setParcel({ ...parcel, [key]: e.target.value });
@@ -83,6 +85,8 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
     setFailure(null);
   }
 
+  if (nextEventFor) return <RecordEventForm initialParcelHash={nextEventFor} ledger={ledger} />;
+
   if (outcome) {
     return (
       <SubmissionResult
@@ -91,6 +95,7 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
         ledger={ledger}
         onAnother={reset}
         anotherLabel="Register another parcel"
+        onRecordNext={() => setNextEventFor(outcome.parcelHash)}
       />
     );
   }

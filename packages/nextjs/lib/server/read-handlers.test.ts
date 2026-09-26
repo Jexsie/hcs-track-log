@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { StoredEvent, StoredParcel } from "@/lib/db/rows";
 import { referenceEvent, referenceParcel } from "@/test/fixtures/records";
-import { getTimelineResponse, type TimelineReader } from "./read-handlers";
+import { type TimelineReader, lookupTimelineResponse } from "./read-handlers";
 
 const hash = "b".repeat(64);
 const reader = (found: boolean): TimelineReader => ({
@@ -19,10 +19,18 @@ const reader = (found: boolean): TimelineReader => ({
   ],
 });
 
-describe("GET /api/parcels/:parcelHash", () => {
-  it("returns the stored timeline (tracking ID normalized from user input)", async () => {
-    const res = await getTimelineResponse(reader(true), ` 0x${hash.toUpperCase()} `);
+const lookup = (body: unknown) =>
+  new Request("http://localhost/api/parcels/lookup", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+
+describe("POST /api/parcels/lookup (tracking ID in the body, never the URL)", () => {
+  it("returns the stored timeline for an exact match, uncacheable", async () => {
+    const res = await lookupTimelineResponse(reader(true), lookup({ trackingId: hash }));
     expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
     const body = (await res.json()) as {
       parcelHash: string;
       events: { hcsSequenceNumber: string }[];
@@ -31,9 +39,22 @@ describe("GET /api/parcels/:parcelHash", () => {
     expect(body.events[0]?.hcsSequenceNumber).toBe("1");
   });
 
-  it("returns 404 for an unknown parcel and 400 for a malformed ID", async () => {
-    expect((await getTimelineResponse(reader(false), hash)).status).toBe(404);
-    expect((await getTimelineResponse(reader(true), "nope")).status).toBe(400);
+  it.each([
+    ["an unknown ID", "c".repeat(64)],
+    ["upper case", hash.toUpperCase()],
+    ["0x prefix", `0x${hash}`],
+    ["a prefix", hash.slice(0, 40)],
+    ["garbage", "nope"],
+  ])("returns the same 404 for %s", async (_label, trackingId) => {
+    const res = await lookupTimelineResponse(reader(true), lookup({ trackingId }));
+    expect(res.status).toBe(404);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("PARCEL_NOT_FOUND");
+  });
+
+  it("returns 400 for a body without a string trackingId", async () => {
+    for (const body of ["{oops", {}, { trackingId: 42 }, []]) {
+      expect((await lookupTimelineResponse(reader(true), lookup(body))).status).toBe(400);
+    }
   });
 
   it("returns 500 without details when the database fails", async () => {
@@ -41,7 +62,7 @@ describe("GET /api/parcels/:parcelHash", () => {
       findParcel: () => Promise.reject(new Error("ECONNREFUSED secret-host")),
       listEvents: async () => [],
     };
-    const res = await getTimelineResponse(broken, hash, () => {});
+    const res = await lookupTimelineResponse(broken, lookup({ trackingId: hash }), () => {});
     expect(res.status).toBe(500);
     expect(await res.text()).not.toContain("secret-host");
   });

@@ -18,12 +18,15 @@ export function SubmissionResult({
   ledger,
   onAnother,
   anotherLabel,
+  onRecordNext,
 }: {
   title: string;
   outcome: SubmissionOutcome;
   ledger: LedgerLinks | null;
   onAnother: () => void;
   anotherLabel: string;
+  /** Continue with an event for this parcel, in-page (the ID never goes into a URL). */
+  onRecordNext?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const mirrorUrl = ledger
@@ -85,17 +88,21 @@ export function SubmissionResult({
 
       <div className="flex flex-wrap gap-2">
         <Link
-          href={`/track/${outcome.parcelHash}`}
+          href="/"
+          target="_blank"
           className="rounded-[10px] bg-accent px-4 py-2.5 font-semibold text-white no-underline"
         >
-          Open public tracking page
+          Open public tracker ↗
         </Link>
-        <Link
-          href={`/admin/events/new?parcel=${outcome.parcelHash}`}
-          className="rounded-[10px] border border-line bg-surface px-4 py-2.5 font-semibold text-fg no-underline"
-        >
-          Record next event
-        </Link>
+        {onRecordNext && (
+          <button
+            type="button"
+            onClick={onRecordNext}
+            className="cursor-pointer rounded-[10px] border border-line bg-surface px-4 py-2.5 font-semibold text-fg no-underline"
+          >
+            Record next event
+          </button>
+        )}
         {mirrorUrl && (
           <a
             href={mirrorUrl}

@@ -1,5 +1,8 @@
 import { PageShell } from "@/app/components/page-shell";
-import { SearchForm } from "@/app/components/search-form";
+import { TrackSearch } from "@/app/components/track-search";
+import { readLedgerLinks } from "@/lib/server/ledger-links";
+
+export const dynamic = "force-dynamic";
 
 const STEPS = [
   { title: "Instant timeline", body: "Events load from the database cache immediately." },
@@ -25,7 +28,7 @@ export default function HomePage() {
           see its journey; your browser then recomputes every event&apos;s SHA-256 from the data
           shown and checks it against the public ledger.
         </p>
-        <SearchForm />
+        <TrackSearch ledger={readLedgerLinks()} />
       </section>
 
       <ol

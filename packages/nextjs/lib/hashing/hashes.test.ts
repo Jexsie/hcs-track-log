@@ -9,7 +9,7 @@ import {
 } from "@/test/fixtures/records";
 import { computeParcelHash } from "./parcel-hash";
 import { computePayloadHash } from "./payload-hash";
-import { isSha256Hex, normalizeHashInput, sha256Hex } from "./sha256";
+import { isSha256Hex, parseTrackingId, sha256Hex } from "./sha256";
 
 /** Collect every leaf path in a canonical JSON document, e.g. "carrier.name". */
 function leafPaths(bytes: Uint8Array): string[] {
@@ -99,14 +99,24 @@ describe("hash field sets", () => {
   });
 });
 
-describe("normalizeHashInput", () => {
-  it("accepts a pasted tracking ID with whitespace, 0x prefix or upper case", () => {
-    expect(normalizeHashInput(`  0x${REFERENCE_PARCEL_SHA256.toUpperCase()} `)).toBe(
-      REFERENCE_PARCEL_SHA256,
-    );
+describe("parseTrackingId (exact match, no fuzzy normalization)", () => {
+  it("accepts exactly 64 lower-case hex characters, trimming only surrounding whitespace", () => {
+    expect(parseTrackingId(REFERENCE_PARCEL_SHA256)).toBe(REFERENCE_PARCEL_SHA256);
+    expect(parseTrackingId(`  ${REFERENCE_PARCEL_SHA256}\n`)).toBe(REFERENCE_PARCEL_SHA256);
   });
 
-  it.each(["", "abc", "g".repeat(64), "a".repeat(63)])("returns null for %j", (input) => {
-    expect(normalizeHashInput(input)).toBeNull();
+  it.each([
+    ["upper case", REFERENCE_PARCEL_SHA256.toUpperCase()],
+    ["0x prefix", `0x${REFERENCE_PARCEL_SHA256}`],
+    ["a prefix of the ID", REFERENCE_PARCEL_SHA256.slice(0, 63)],
+    ["an extra character", `${REFERENCE_PARCEL_SHA256}0`],
+    [
+      "inner whitespace",
+      `${REFERENCE_PARCEL_SHA256.slice(0, 32)} ${REFERENCE_PARCEL_SHA256.slice(32)}`,
+    ],
+    ["SQL wildcards", `${REFERENCE_PARCEL_SHA256.slice(0, 60)}%%%%`],
+    ["empty", ""],
+  ])("rejects %s instead of guessing what was meant", (_label, input) => {
+    expect(parseTrackingId(input)).toBeNull();
   });
 });
