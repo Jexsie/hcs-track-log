@@ -1,0 +1,118 @@
+{
+  "name": "hcs-track-log",
+  "description": "Cargo & package tracker on Hedera: shipment events are notarized as blind SHA-256 commitments on a multi-sig HCS topic, cached in Postgres, and verified by recomputing each hash from content.",
+  "version": "0.1.0",
+  "create-scaffold-hbar": {
+    "capabilities": {
+      "frontend": ["nextjs-app"],
+      "solidityFramework": ["none"],
+      "packageManager": ["npm"]
+    },
+    "defaults": {
+      "frontend": "nextjs-app",
+      "solidityFramework": "none",
+      "packageManager": "npm"
+    },
+    "envVars": [
+      {
+        "key": "HEDERA_NETWORK",
+        "description": ".env. Hedera network: testnet, previewnet or mainnet (default testnet)."
+      },
+      {
+        "key": "HEDERA_OPERATOR_ID",
+        "description": ".env. Operator account id (0.0.x) that pays fees and creates the topic."
+      },
+      {
+        "key": "HEDERA_OPERATOR_KEY",
+        "description": ".env. Operator private key (DER or hex). Placeholder only in .env.example; never commit a real key."
+      },
+      {
+        "key": "HCS_TOPIC_ID",
+        "description": ".env. Topic id (0.0.x) printed by `npm run topic:create`."
+      },
+      {
+        "key": "HCS_SUBMIT_PUBLIC_KEYS",
+        "description": ".env. Comma-separated public keys of every authorized submitter. Becomes the topic's threshold submit key."
+      },
+      {
+        "key": "HCS_SUBMIT_THRESHOLD",
+        "description": ".env. Number of submitter signatures required per message (1..N)."
+      },
+      {
+        "key": "HCS_SUBMIT_SIGNER_KEYS",
+        "description": ".env. Comma-separated private keys this server signs submissions with. Must meet HCS_SUBMIT_THRESHOLD."
+      },
+      {
+        "key": "MIRROR_NODE_URL",
+        "description": ".env. Mirror node base URL used for verification (default https://testnet.mirrornode.hedera.com)."
+      },
+      {
+        "key": "DATABASE_URL",
+        "description": ".env. Postgres connection string (required). docker-compose.yml default: postgres://hcs:hcs@localhost:5432/hcs_track_log."
+      }
+    ],
+    "outro": {
+      "sections": [
+        {
+          "steps": [
+            {
+              "text": "hcs-track-log uses the Hedera Consensus Service directly; there are no Solidity contracts to deploy. Postgres is required."
+            }
+          ]
+        },
+        {
+          "title": "Configure",
+          "steps": [
+            {
+              "label": "Copy the env file and fill in your operator account and submitter keys",
+              "text": "cp .env.example .env"
+            },
+            {
+              "label": "Get a testnet account",
+              "url": "https://portal.hedera.com/"
+            }
+          ]
+        },
+        {
+          "title": "Database",
+          "steps": [
+            {
+              "label": "Start Postgres",
+              "text": "docker compose up -d"
+            },
+            {
+              "label": "Run migrations",
+              "command": "{run:db:migrate}"
+            }
+          ]
+        },
+        {
+          "title": "Ledger",
+          "steps": [
+            {
+              "label": "Create the HCS topic with the multi-sig submit key, then set HCS_TOPIC_ID in .env",
+              "command": "{run:topic:create}"
+            }
+          ]
+        },
+        {
+          "title": "Run",
+          "steps": [
+            {
+              "label": "Start the app",
+              "command": "{run:next:dev}"
+            },
+            {
+              "label": "Verify every event on the topic from the command line",
+              "command": "{run:verify} -- --topic <topicId>"
+            },
+            {
+              "label": "Read the architecture and trust model",
+              "text": "See README.md and AGENTS.md."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

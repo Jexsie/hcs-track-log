@@ -1,0 +1,43 @@
+{
+  "name": "hcs-track-log",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cargo & package tracker on Hedera: shipment events notarized on HCS, verified by recomputing SHA-256 from content.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.18.3"
+  },
+  "packageManager": "npm@11.12.1",
+  "scripts": {
+    "next:dev": "npm run dev --workspace=@hcs-track-log/nextjs",
+    "next:build": "npm run build --workspace=@hcs-track-log/nextjs",
+    "next:start": "npm run start --workspace=@hcs-track-log/nextjs",
+    "lint": "eslint . && npm run typecheck --workspace=@hcs-track-log/nextjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspace=@hcs-track-log/nextjs",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.6",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.9",
+    "typescript-eslint": "^8.70.1"
+  }
+}
