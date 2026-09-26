@@ -1,5 +1,7 @@
 "use client";
 
+import { Notice, PageShell } from "@/app/components/page-shell";
+
 export default function TrackError({
   reset,
 }: {
@@ -7,17 +9,20 @@ export default function TrackError({
   reset: () => void;
 }) {
   return (
-    <main className="container stack">
-      <section className="notice" role="alert">
-        <h1>Could not load this parcel</h1>
-        <p>
+    <PageShell>
+      <Notice title="Could not load this parcel" alert>
+        <p className="mb-3 text-muted">
           The tracking database is unavailable right now. Nothing about the ledger record has
           changed.
         </p>
-        <button type="button" onClick={reset}>
+        <button
+          type="button"
+          onClick={reset}
+          className="cursor-pointer rounded-lg bg-accent px-4 py-2 font-semibold text-white"
+        >
           Try again
         </button>
-      </section>
-    </main>
+      </Notice>
+    </PageShell>
   );
 }

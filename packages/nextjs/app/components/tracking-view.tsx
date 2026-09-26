@@ -3,7 +3,6 @@
 import type { TimelineDto } from "@/lib/timeline/dto";
 import { EventCard } from "./event-card";
 import { ParcelSummary } from "./parcel-summary";
-import styles from "./tracking-view.module.css";
 import { useVerification } from "./use-verification";
 import { VerificationBanner } from "./verification-banner";
 
@@ -28,7 +27,7 @@ export function TrackingView({
   for (const v of verification.events) if (v) counts[v.status]++;
 
   return (
-    <div className={styles.view}>
+    <div className="grid gap-5">
       <VerificationBanner
         counts={counts}
         done={verification.done}
@@ -42,10 +41,14 @@ export function TrackingView({
         verdict={verification.parcel}
       />
       <section aria-labelledby="timeline-heading">
-        <h2 id="timeline-heading" className={styles.heading}>
-          Shipment timeline <span>{timeline.events.length} events</span>
+        <h2
+          id="timeline-heading"
+          className="mt-2 mb-3 flex items-baseline gap-2.5 text-lg font-bold"
+        >
+          Shipment timeline{" "}
+          <span className="text-sm font-normal text-muted">{timeline.events.length} events</span>
         </h2>
-        <ol className={styles.timeline}>
+        <ol className="m-0 grid gap-4 p-0">
           {timeline.events.map((event, i) => (
             <EventCard key={event.id} event={event} verdict={verification.events[i]} />
           ))}

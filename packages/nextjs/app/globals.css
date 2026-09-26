@@ -1,25 +1,21 @@
+@import "tailwindcss";
+
+/* Semantic color tokens; dark mode swaps the values, utilities stay the same. */
 :root {
   --bg: #f5f7fa;
   --surface: #ffffff;
   --surface-2: #eef1f5;
   --fg: #141820;
   --muted: #5b6474;
-  --border: #d9dee6;
+  --line: #d9dee6;
   --accent: #0b6bcb;
   --ok: #17803d;
-  --ok-bg: #e7f6ec;
+  --ok-soft: #e7f6ec;
   --warn: #9a5b00;
-  --warn-bg: #fff4e0;
+  --warn-soft: #fff4e0;
   --danger: #c4231c;
-  --danger-bg: #fdecea;
+  --danger-soft: #fdecea;
   --sheen: rgb(11 107 203 / 0.08);
-  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
   color-scheme: light dark;
 }
 
@@ -30,80 +26,79 @@
     --surface-2: #1f2630;
     --fg: #e6e9ee;
     --muted: #97a1b0;
-    --border: #2a323d;
+    --line: #2a323d;
     --accent: #58a6ff;
     --ok: #3fb950;
-    --ok-bg: #12261a;
+    --ok-soft: #12261a;
     --warn: #e3a33b;
-    --warn-bg: #2b2112;
+    --warn-soft: #2b2112;
     --danger: #ff6b61;
-    --danger-bg: #2d1414;
+    --danger-soft: #2d1414;
     --sheen: rgb(88 166 255 / 0.1);
   }
 }
 
-* {
-  box-sizing: border-box;
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-sheen: var(--sheen);
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  line-height: 1.5;
+@theme {
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* "Verifying" sheen across cards still being checked. */
+  --animate-sheen: sheen 1.4s ease-in-out infinite;
+  /* Progress bar under the verification banner. */
+  --animate-scan: scan 1.6s ease-in-out infinite;
+  /* Pulsing dot in the verification banner. */
+  --animate-pulse-ring: pulse-ring 1.2s ease-out infinite;
+
+  @keyframes sheen {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes scan {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+
+  @keyframes pulse-ring {
+    from {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+    }
+    to {
+      box-shadow: 0 0 0 12px transparent;
+    }
+  }
 }
 
-a {
-  color: var(--accent);
-}
+@layer base {
+  body {
+    @apply bg-bg text-fg leading-normal antialiased;
+  }
 
-.container {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 32px 16px 64px;
-}
-
-.site-header {
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.site-header .container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-
-.brand {
-  font-weight: 700;
-  color: var(--fg);
-  text-decoration: none;
-}
-
-.brand span {
-  color: var(--accent);
-}
-
-.tagline {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.stack {
-  display: grid;
-  gap: 20px;
-}
-
-.notice {
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.notice h1,
-.notice h2 {
-  margin-top: 0;
+  a {
+    @apply text-accent;
+  }
 }

@@ -63,7 +63,7 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 ## Architecture
 
 ```
-packages/nextjs    Next.js App Router app: UI, API routes, domain logic, scripts
+packages/nextjs    Next.js App Router app (Tailwind CSS v4): UI, API routes, domain logic, scripts
 ```
 
 - **Write (HCS-first):** canonicalize the event → SHA-256 → build the envelope → submit to the

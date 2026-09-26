@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { normalizeHashInput } from "@/lib/hashing/sha256";
-import styles from "./search-form.module.css";
 
 export function SearchForm({ initialValue = "" }: { initialValue?: string }) {
   const router = useRouter();
@@ -24,14 +23,14 @@ export function SearchForm({ initialValue = "" }: { initialValue?: string }) {
   }
 
   return (
-    <form className={styles.form} onSubmit={onSubmit} role="search" noValidate>
-      <label htmlFor="tracking-id" className={styles.label}>
+    <form className="grid gap-2" onSubmit={onSubmit} role="search" noValidate>
+      <label htmlFor="tracking-id" className="text-sm font-semibold">
         Tracking ID
       </label>
-      <div className={styles.row}>
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           id="tracking-id"
-          className={styles.input}
+          className="min-w-0 flex-1 rounded-[10px] border border-line bg-surface px-3.5 py-3 font-mono text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent aria-invalid:border-danger"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="e.g. 39c6b2dc…1fcc74 (64 hex characters)"
@@ -40,12 +39,16 @@ export function SearchForm({ initialValue = "" }: { initialValue?: string }) {
           aria-invalid={error !== null}
           aria-describedby={error ? "tracking-id-error" : undefined}
         />
-        <button className={styles.button} type="submit" disabled={pending}>
+        <button
+          className="cursor-pointer rounded-[10px] bg-accent px-5.5 py-3 font-semibold text-white disabled:cursor-progress disabled:opacity-70"
+          type="submit"
+          disabled={pending}
+        >
           {pending ? "Searching…" : "Track"}
         </button>
       </div>
       {error && (
-        <p id="tracking-id-error" className={styles.error} role="alert">
+        <p id="tracking-id-error" className="m-0 text-sm text-danger" role="alert">
           {error}
         </p>
       )}

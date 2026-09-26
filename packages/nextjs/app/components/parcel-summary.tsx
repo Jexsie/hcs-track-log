@@ -1,7 +1,12 @@
 import { formatUtc, shortHash } from "@/lib/timeline/format";
 import type { ParcelContentDto } from "@/lib/timeline/dto";
 import type { ParcelVerdict } from "@/lib/verify/verdicts";
-import styles from "./parcel-summary.module.css";
+
+const CHECK: Record<ParcelVerdict["status"] | "pending", string> = {
+  pending: "bg-surface-2 text-muted",
+  verified: "bg-ok-soft text-ok",
+  tampered: "bg-danger-soft font-semibold text-danger",
+};
 
 export function ParcelSummary({
   parcelHash,
@@ -14,15 +19,18 @@ export function ParcelSummary({
 }) {
   const { consignment, parties } = parcel;
   return (
-    <section className={styles.card} aria-labelledby="parcel-heading">
-      <h2 id="parcel-heading" className={styles.title}>
+    <section
+      className="rounded-[14px] border border-line bg-surface p-5"
+      aria-labelledby="parcel-heading"
+    >
+      <h2 id="parcel-heading" className="m-0 text-xl font-bold">
         {consignment.description}
       </h2>
-      <p className={styles.id} title={parcelHash}>
-        Tracking ID <code>{parcelHash}</code>
+      <p className="mt-1.5 mb-4 text-sm wrap-anywhere text-muted" title={parcelHash}>
+        Tracking ID <code className="font-mono">{parcelHash}</code>
       </p>
 
-      <dl className={styles.grid}>
+      <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-5 gap-y-3">
         <Item label="Shipper" value={parties.shipper} />
         <Item label="Consignee" value={parties.consignee} />
         <Item
@@ -36,7 +44,7 @@ export function ParcelSummary({
       </dl>
 
       <p
-        className={`${styles.check} ${verdict ? styles[verdict.status] : styles.pending}`}
+        className={`mt-4 mb-0 rounded-[10px] px-3 py-2.5 text-sm ${CHECK[verdict?.status ?? "pending"]}`}
         role="status"
       >
         {!verdict && "Recomputing tracking ID from parcel details…"}
@@ -49,7 +57,7 @@ export function ParcelSummary({
               <>
                 {" "}
                 Recomputed{" "}
-                <code title={verdict.recomputedParcelHash}>
+                <code className="font-mono" title={verdict.recomputedParcelHash}>
                   {shortHash(verdict.recomputedParcelHash)}
                 </code>
                 .
@@ -65,8 +73,8 @@ export function ParcelSummary({
 function Item({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dt className="text-xs tracking-wide text-muted uppercase">{label}</dt>
+      <dd className="mt-0.5 wrap-anywhere">{value}</dd>
     </div>
   );
 }
