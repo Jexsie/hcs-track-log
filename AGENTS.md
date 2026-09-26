@@ -60,17 +60,28 @@ on-chain anchor.
 
 ## Key paths
 
-| Path                               | Purpose                                                          |
-| ---------------------------------- | ---------------------------------------------------------------- |
-| `CLAUDE.md`                        | Project standards and non-negotiable invariants                  |
-| `template.json`                    | scaffold-hbar manifest: capabilities, env vars, onboarding outro |
-| `.env.example`                     | Placeholder environment configuration                            |
-| `eslint.config.mjs`                | ESLint 9 flat config (Next + typescript-eslint strict, no `any`) |
-| `.husky/pre-commit`                | Runs lint-staged (ESLint + Prettier on staged files)             |
-| `.github/workflows/ci.yml`         | CI: install → lint → test → build                                |
-| `packages/nextjs/app/layout.tsx`   | Root layout and metadata                                         |
-| `packages/nextjs/app/page.tsx`     | Home page                                                        |
-| `packages/nextjs/vitest.config.ts` | Test runner configuration                                        |
+| Path                                            | Purpose                                                                                         |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `CLAUDE.md`                                     | Project standards and non-negotiable invariants                                                 |
+| `template.json`                                 | scaffold-hbar manifest: capabilities, env vars, onboarding outro                                |
+| `.env.example`                                  | Placeholder environment configuration                                                           |
+| `eslint.config.mjs`                             | ESLint 9 flat config (Next + typescript-eslint strict, no `any`)                                |
+| `.husky/pre-commit`                             | Runs lint-staged (ESLint + Prettier on staged files)                                            |
+| `.github/workflows/ci.yml`                      | CI: install → lint → test → build                                                               |
+| `packages/nextjs/app/layout.tsx`                | Root layout and metadata                                                                        |
+| `packages/nextjs/app/page.tsx`                  | Home page                                                                                       |
+| `packages/nextjs/vitest.config.ts`              | Test runner configuration                                                                       |
+| `packages/nextjs/lib/canonical/normalize.ts`    | Primitive normalizers: trim + NFC text, positive int, fixed-scale decimal, ISO-8601 Z timestamp |
+| `packages/nextjs/lib/canonical/shape.ts`        | Object/field readers that reject unknown keys and attach field paths to errors                  |
+| `packages/nextjs/lib/canonical/canonicalize.ts` | The single deterministic serializer (sorted keys, compact, UTF-8)                               |
+| `packages/nextjs/lib/canonical/event.ts`        | **Shared event canonical builder** used by submit and verify                                    |
+| `packages/nextjs/lib/canonical/parcel.ts`       | **Shared parcel canonical builder** used by creation and search                                 |
+| `packages/nextjs/lib/canonical/errors.ts`       | `FieldError` / `ValidationError`                                                                |
+| `packages/nextjs/lib/hashing/sha256.ts`         | WebCrypto SHA-256 hex, hash format check, tracking-ID input normalization                       |
+| `packages/nextjs/lib/hashing/payload-hash.ts`   | `computePayloadHash`: per-event commitment                                                      |
+| `packages/nextjs/lib/hashing/parcel-hash.ts`    | `computeParcelHash`: public tracking ID                                                         |
+| `packages/nextjs/lib/envelope/envelope.ts`      | `HcsMessageEnvelope` build / serialize / strict parse                                           |
+| `packages/nextjs/test/fixtures/records.ts`      | Reference event and parcel with independently computed digests                                  |
 
 ## Commands
 
