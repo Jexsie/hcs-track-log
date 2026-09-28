@@ -195,6 +195,8 @@ on-chain anchor.
 | `packages/nextjs/app/components/verification-banner.tsx`           | Animated "Verifying live ledger integrity…" overlay and result summary                                                                        |
 | `packages/nextjs/app/components/event-card.tsx`                    | Timeline row: sequence number, badge, mirror link, security warning                                                                           |
 | `packages/nextjs/app/components/verdict-badge.tsx`                 | Per-event verdict pill (checking / verified link / tampered / unreachable)                                                                    |
+| `packages/nextjs/lib/brand.ts`                                     | Demo company branding (Kivu Cargo): name, portal label, booking prefix, own carrier                                                           |
+| `packages/nextjs/app/components/brand-mark.tsx`                    | Logo + company name used in both headers                                                                                                      |
 | `packages/nextjs/app/components/parcel-summary.tsx`                | Parcel details and tracking-ID recompute check                                                                                                |
 | `packages/nextjs/scripts/verify.ts`                                | `npm run verify`                                                                                                                              |
 | `packages/nextjs/test/fake-ledger.ts`                              | In-memory topic serving mirror-node-shaped HTTP responses                                                                                     |

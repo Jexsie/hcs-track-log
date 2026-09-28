@@ -27,7 +27,7 @@ export function WalletPanel() {
   return (
     <section
       className="grid gap-3 rounded-xl border border-line bg-surface px-4 py-3.5"
-      aria-label="Administrator wallet"
+      aria-label="Staff wallet"
     >
       {wallet.status === "unconfigured" && (
         <p className="m-0 text-sm">

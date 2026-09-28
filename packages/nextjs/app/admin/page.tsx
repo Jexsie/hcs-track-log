@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 
 const ACTIONS = [
   {
@@ -14,9 +15,10 @@ export default function AdminHome() {
   return (
     <>
       <section>
-        <h1 className="mb-1 text-2xl font-bold">Admin</h1>
+        <h1 className="mb-1 text-2xl font-bold">{BRAND.portal}</h1>
         <p className="m-0 text-muted">
-          Every change needs approval from more than one admin before customers see it.
+          Book shipments and post updates. Every change is approved by more than one member of staff
+          before customers see it.
         </p>
       </section>
       <div className="grid gap-4 sm:grid-cols-3">

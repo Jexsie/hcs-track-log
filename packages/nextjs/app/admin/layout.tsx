@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { type AdminConfig, AdminProvider } from "@/app/components/admin/admin-context";
 import { WalletPanel } from "@/app/components/admin/wallet-panel";
+import { BrandMark } from "@/app/components/brand-mark";
+import { BRAND } from "@/lib/brand";
 import {
   ConfigError,
   readMirrorNodeUrl,
@@ -12,7 +14,7 @@ import {
 } from "@/lib/config/env";
 
 export const metadata: Metadata = {
-  title: "Admin — Cargo Tracker",
+  title: `${BRAND.portal} — ${BRAND.name}`,
   robots: { index: false, follow: false },
 };
 
@@ -49,12 +51,12 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
             href="/admin"
             className="flex items-center gap-2.5 font-bold text-band-fg no-underline"
           >
-            Cargo Tracker
+            <BrandMark />
             <span className="rounded-md bg-accent px-2 py-0.5 text-xs font-bold tracking-wider text-white uppercase">
-              Admin
+              {BRAND.portal}
             </span>
           </Link>
-          <nav aria-label="Administrator" className="flex flex-wrap gap-1">
+          <nav aria-label="Staff" className="flex flex-wrap gap-1">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -69,7 +71,7 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
             href="/"
             className="ml-auto text-sm text-band-fg/80 no-underline hover:text-band-fg"
           >
-            Public tracking
+            Customer tracking
           </Link>
         </div>
       </header>
@@ -81,7 +83,7 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
           </AdminProvider>
         ) : (
           <section className="rounded-xl border-2 border-danger bg-surface p-5" role="alert">
-            <h1 className="mt-0 mb-1 text-xl font-bold">Admin is not set up yet</h1>
+            <h1 className="mt-0 mb-1 text-xl font-bold">The staff portal is not set up yet</h1>
             <p className="m-0 text-muted">
               Finish the server setup (see the README), then restart it.
             </p>

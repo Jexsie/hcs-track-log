@@ -21,8 +21,8 @@ export function ProposalCreated({
       <div className="rounded-[14px] border-2 border-accent bg-surface p-5">
         <p className="m-0 font-semibold text-accent">Submitted for approval</p>
         <p className="mt-1 mb-0 text-sm text-muted">
-          Customers will see it once enough admins approve. Confirm your own approval in your
-          wallet; others can approve it under <Link href="/admin/approvals">Approvals</Link>.
+          Customers will see it once enough staff approve. Confirm your own approval in your wallet;
+          colleagues can approve it under <Link href="/admin/approvals">Approvals</Link>.
         </p>
       </div>
       <ApprovalCard submission={submission} autoApprove />

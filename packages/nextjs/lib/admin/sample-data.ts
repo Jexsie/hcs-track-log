@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { HederaNetwork } from "@/lib/wallet/hip820";
 import { toLocalInputValue } from "./datetime";
 import type { EventForm, ParcelForm } from "./validation";
@@ -36,7 +37,9 @@ const CONSIGNEES = [
   "Dubai Trade Hub LLC",
 ];
 const CARRIERS = [
-  { name: "MTN Logistics", scacCode: "MTNL" },
+  BRAND.carrier,
+  BRAND.carrier, // the company's own trucks carry most legs
+
   { name: "Maersk Line", scacCode: "MAEU" },
   { name: "Mediterranean Shipping Co", scacCode: "MSCU" },
   { name: "DHL Global Forwarding", scacCode: "DHLG" },
@@ -82,7 +85,7 @@ export function sampleParcelForm(): ParcelForm {
     volumeCubicMeters: toScale2(Math.max(0.01, mass / between(250, 600))),
     shipper: pick(SHIPPERS),
     consignee: pick(CONSIGNEES),
-    bookingRef: `BK-DEMO-${unique}`,
+    bookingRef: `${BRAND.bookingPrefix}-${unique}`,
   };
 }
 

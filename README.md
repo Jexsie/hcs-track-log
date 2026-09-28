@@ -339,6 +339,14 @@ and have whole-second precision.
 `cargo_events.payer_account_id` is a convenience copy only. It is **not** covered by
 `payloadHash`. The mirror node's transaction record is the authoritative payer.
 
+### Branding
+
+The app is dressed as **Kivu Cargo**, a fictional freight company. Customers track shipments on the
+public page, and Kivu Cargo staff book shipments and post updates in the **staff portal**
+(`/admin`). To rebrand it for your own company, edit `packages/nextjs/lib/brand.ts`: the name,
+portal label, booking-reference prefix and the company's own carrier. The logo is in
+`app/components/brand-mark.tsx`.
+
 ### UI wording
 
 The interface uses plain cargo language: shipments, updates, tracking ID, shipper, consignee and

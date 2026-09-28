@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import { type ApiFailure, proposeRegistration } from "@/lib/admin/api";
+import { BRAND } from "@/lib/brand";
 import type { SubmissionDto } from "@/lib/approvals/dto";
 import {
   EMPTY_EVENT_FORM,
@@ -176,7 +177,7 @@ export function RegisterParcelForm() {
             value={parcel.bookingRef}
             onChange={set("bookingRef")}
             error={parcelErrors.bookingRef}
-            placeholder="BK-2026-000184"
+            placeholder={`${BRAND.bookingPrefix}-2026-000184`}
             className="sm:col-span-2"
           />
         </FormSection>

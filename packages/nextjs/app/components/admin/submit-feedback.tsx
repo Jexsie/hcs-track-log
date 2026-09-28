@@ -7,7 +7,7 @@ const MESSAGE: Record<string, string> = {
   PARCEL_NOT_FOUND: "No shipment found with this tracking ID.",
   PARCEL_EXISTS: "This shipment already exists or is waiting for approval.",
   SUBMISSION_FAILED: "Could not submit. Nothing was saved, so you can try again.",
-  SERVER_MISCONFIGURED: "Admin is not set up correctly. Contact whoever runs this service.",
+  SERVER_MISCONFIGURED: "The staff portal is not set up correctly. Contact your IT team.",
   LEDGER_UNAVAILABLE: "The service is busy. Try again in a moment.",
   NETWORK_ERROR: "No connection. Try again.",
 };

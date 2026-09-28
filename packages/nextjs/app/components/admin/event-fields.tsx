@@ -1,6 +1,7 @@
 "use client";
 
 import { toLocalInputValue } from "@/lib/admin/datetime";
+import { BRAND } from "@/lib/brand";
 import type { EventForm, FormErrors } from "@/lib/admin/validation";
 import { Field, FormSection } from "./field";
 
@@ -53,7 +54,7 @@ export function EventFields({
         value={value.carrierName}
         onChange={set("carrierName")}
         error={errors.carrierName}
-        placeholder="MTN Logistics"
+        placeholder={BRAND.carrier.name}
       />
       <Field
         name="scacCode"
@@ -61,7 +62,7 @@ export function EventFields({
         value={value.scacCode}
         onChange={set("scacCode")}
         error={errors.scacCode}
-        placeholder="MTNL"
+        placeholder={BRAND.carrier.scacCode}
         maxLength={4}
         autoCapitalize="characters"
         inputClassName="uppercase"
