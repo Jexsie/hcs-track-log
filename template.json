@@ -20,7 +20,7 @@
       },
       {
         "key": "HEDERA_OPERATOR_ID",
-        "description": ".env. Operator account id (0.0.x) that pays fees and creates the topic."
+        "description": ".env. Operator account id (0.0.x): pays for topic creation and approval schedules. Not a submit key."
       },
       {
         "key": "HEDERA_OPERATOR_KEY",
@@ -32,15 +32,15 @@
       },
       {
         "key": "HCS_SUBMIT_PUBLIC_KEYS",
-        "description": ".env. Comma-separated public keys of every authorized submitter. Becomes the topic's threshold submit key."
+        "description": ".env. Comma-separated public keys of the administrators' Hedera WALLET accounts. Becomes the topic's threshold submit key; every message must be approved from these wallets."
       },
       {
         "key": "HCS_SUBMIT_THRESHOLD",
-        "description": ".env. Number of submitter signatures required per message (2..N)."
+        "description": ".env. Number of wallet approvals required per message (2..N)."
       },
       {
         "key": "HCS_SUBMIT_SIGNER_KEYS",
-        "description": ".env. Comma-separated private keys this server signs submissions with. Must meet HCS_SUBMIT_THRESHOLD."
+        "description": ".env. DEV ONLY: private keys used by `npm run db:seed` to sign directly. The web server never reads them."
       },
       {
         "key": "HCS_ADMIN_PUBLIC_KEYS",
@@ -67,8 +67,16 @@
         "description": ".env. Test database for `npm run test`; its schema is dropped on every run and its name must end in _test (default postgres://hcs:hcs@localhost:5432/hcs_track_log_test)."
       },
       {
-        "key": "SUBMITTER_API_TOKEN",
-        "description": ".env. Bearer token (at least 32 chars) required by the write API. Generate with `openssl rand -hex 32`."
+        "key": "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+        "description": ".env. WalletConnect Cloud project id (from dashboard.reown.com) for connecting administrators' Hedera wallets."
+      },
+      {
+        "key": "ADMIN_SESSION_SECRET",
+        "description": ".env. HMAC key (at least 32 chars) for wallet sign-in challenges and admin session cookies. Generate with `openssl rand -hex 32`."
+      },
+      {
+        "key": "HCS_APPROVAL_WINDOW_HOURS",
+        "description": ".env, optional. Hours a proposal waits for wallet approvals (default 24, max 1488)."
       }
     ],
     "outro": {
@@ -118,7 +126,7 @@
               "command": "{run:topic:create}"
             },
             {
-              "label": "Optional: anchor a demo parcel on HCS and cache it",
+              "label": "Dev only: anchor a demo parcel, signing directly with HCS_SUBMIT_SIGNER_KEYS (they must be submit keys)",
               "command": "{run:db:seed}"
             }
           ]
@@ -131,7 +139,7 @@
               "command": "{run:next:dev}"
             },
             {
-              "label": "Register parcels and record events in the administrator console (paste SUBMITTER_API_TOKEN when asked)",
+              "label": "Open the administrator console, connect your Hedera wallet and sign in; proposals execute once enough administrators approve them in their wallets",
               "url": "http://localhost:3000/admin"
             },
             {

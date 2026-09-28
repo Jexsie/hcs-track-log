@@ -9,33 +9,10 @@ import {
   SubmissionFailedError,
 } from "@/lib/tracking/errors";
 import { recordedEvent } from "@/test/fixtures/parcels";
-import {
-  UnauthorizedError,
-  errorResponse,
-  isAuthorized,
-  jsonResponse,
-  readJsonBody,
-  serializeForLog,
-} from "./http";
+import { errorResponse, jsonResponse, readJsonBody, serializeForLog } from "./http";
 
-const TOKEN = "t".repeat(40);
 const req = (headers: Record<string, string> = {}, body?: string) =>
   new Request("http://localhost/api/parcels", { method: "POST", headers, body });
-
-describe("isAuthorized", () => {
-  it("accepts the exact bearer token", () => {
-    expect(isAuthorized(req({ authorization: `Bearer ${TOKEN}` }), TOKEN)).toBe(true);
-  });
-
-  it.each([
-    ["no header", {}],
-    ["wrong token", { authorization: `Bearer ${"x".repeat(40)}` }],
-    ["prefix of the token", { authorization: `Bearer ${TOKEN.slice(0, 10)}` }],
-    ["wrong scheme", { authorization: `Basic ${TOKEN}` }],
-  ])("rejects %s", (_label, headers) => {
-    expect(isAuthorized(req(headers), TOKEN)).toBe(false);
-  });
-});
 
 describe("readJsonBody", () => {
   it("parses JSON and rejects malformed bodies", async () => {
@@ -57,7 +34,6 @@ describe("errorResponse", () => {
   const quiet = () => {};
 
   it.each([
-    [new UnauthorizedError(), 401, "UNAUTHORIZED"],
     [new ValidationError("carrier.scacCode", "must be 2–4 letters"), 400, "VALIDATION_ERROR"],
     [new ParcelNotFoundError("a".repeat(64)), 404, "PARCEL_NOT_FOUND"],
     [new ParcelExistsError("a".repeat(64)), 409, "PARCEL_EXISTS"],

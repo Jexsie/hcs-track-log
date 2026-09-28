@@ -1,7 +1,4 @@
 import { RegisterParcelForm } from "@/app/components/admin/register-parcel-form";
-import { readLedgerLinks } from "@/lib/server/ledger-links";
-
-export const dynamic = "force-dynamic";
 
 export default function RegisterParcelPage() {
   return (
@@ -13,7 +10,7 @@ export default function RegisterParcelPage() {
           creation time.
         </p>
       </section>
-      <RegisterParcelForm ledger={readLedgerLinks()} />
+      <RegisterParcelForm />
     </>
   );
 }

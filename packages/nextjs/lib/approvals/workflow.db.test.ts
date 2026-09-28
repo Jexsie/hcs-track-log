@@ -162,6 +162,22 @@ describe("propose → approve in wallets → finalize", () => {
     expect((await pending.listOpen()).map((s) => s.id)).not.toContain(submission.id);
   });
 
+  it("reports a schedule the mirror node has not indexed yet as pending, not an error", async () => {
+    const submission = await proposeRegistration(
+      { parcel: parcelForm, firstEvent: referenceEvent },
+      proposeDeps(),
+    );
+    const lagging = {
+      ...finalizeDeps(),
+      readSchedule: () => fetchSchedule(FAKE_MIRROR, "0.0.424242", ledger.fetch),
+    };
+    expect(await finalizeSubmission(submission.id, lagging)).toEqual({
+      status: "pending",
+      approvals: 0,
+      awaitingMirror: true,
+    });
+  });
+
   it("expires a submission whose approval window passed without enough approvals", async () => {
     const submission = await proposeRegistration(
       { parcel: parcelForm, firstEvent: referenceEvent },

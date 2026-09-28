@@ -1,7 +1,8 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { type ApiResult, registerParcel } from "@/lib/admin/api";
+import { type ApiFailure, proposeRegistration } from "@/lib/admin/api";
+import type { SubmissionDto } from "@/lib/approvals/dto";
 import {
   EMPTY_EVENT_FORM,
   EMPTY_PARCEL_FORM,
@@ -14,27 +15,24 @@ import {
   validateEventForm,
   validateParcelForm,
 } from "@/lib/admin/validation";
-import type { LedgerLinks } from "@/lib/server/ledger-links";
-import { envelopeFor } from "./envelope-preview";
+import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
-import { RecordEventForm } from "./record-event-form";
 import { Field, FormSection } from "./field";
-import { type SubmissionOutcome, SubmissionResult } from "./submission-result";
-import { SubmitButton, SubmitError } from "./submit-feedback";
-import { useSubmitterToken } from "./use-submitter-token";
+import { ProposalCreated } from "./proposal-created";
+import { RecordEventForm } from "./record-event-form";
+import { SIGN_IN_FIRST, SubmitButton, SubmitError } from "./submit-feedback";
 
 const PACKAGE_TYPES = ["Box", "Pallet", "Bag", "Crate", "Drum", "Envelope", "Container"];
-type Failure = Extract<ApiResult<unknown>, { ok: false }>;
 
-export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
-  const [token] = useSubmitterToken();
+export function RegisterParcelForm() {
+  const { adminAccountId } = useAdmin();
   const [parcel, setParcel] = useState<ParcelForm>(EMPTY_PARCEL_FORM);
   const [event, setEvent] = useState<EventForm>({ ...EMPTY_EVENT_FORM, status: "Booked" });
   const [parcelErrors, setParcelErrors] = useState<FormErrors<ParcelForm>>({});
   const [eventErrors, setEventErrors] = useState<FormErrors<EventForm>>({});
   const [pending, setPending] = useState(false);
-  const [failure, setFailure] = useState<Failure | null>(null);
-  const [outcome, setOutcome] = useState<SubmissionOutcome | null>(null);
+  const [failure, setFailure] = useState<ApiFailure | null>(null);
+  const [proposal, setProposal] = useState<SubmissionDto | null>(null);
   const [nextEventFor, setNextEventFor] = useState<string | null>(null);
 
   const set = (key: keyof ParcelForm) => (e: { target: { value: string } }) =>
@@ -48,28 +46,20 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
     setEventErrors(eErrors);
     setFailure(null);
     if (Object.keys(pErrors).length || Object.keys(eErrors).length) return;
-    if (!token) {
-      setFailure({
-        ok: false,
-        status: 401,
-        code: "UNAUTHORIZED",
-        message: "Enter the submitter API token first.",
-      });
+    if (!adminAccountId) {
+      setFailure(SIGN_IN_FIRST);
       return;
     }
 
     setPending(true);
-    const firstEvent = toEventPayload(event);
-    const result = await registerParcel(token, { parcel: toParcelPayload(parcel), firstEvent });
+    const result = await proposeRegistration({
+      parcel: toParcelPayload(parcel),
+      firstEvent: toEventPayload(event),
+    });
     setPending(false);
 
     if (result.ok) {
-      const { parcelHash, firstEvent: anchored } = result.data;
-      setOutcome({
-        parcelHash,
-        hcsSequenceNumber: anchored.hcsSequenceNumber,
-        envelope: await envelopeFor(parcelHash, firstEvent),
-      });
+      setProposal(result.data.submission);
       return;
     }
     setFailure(result);
@@ -81,21 +71,19 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
   function reset() {
     setParcel(EMPTY_PARCEL_FORM);
     setEvent({ ...EMPTY_EVENT_FORM, status: "Booked" });
-    setOutcome(null);
+    setProposal(null);
     setFailure(null);
   }
 
-  if (nextEventFor) return <RecordEventForm initialParcelHash={nextEventFor} ledger={ledger} />;
+  if (nextEventFor) return <RecordEventForm initialParcelHash={nextEventFor} />;
 
-  if (outcome) {
+  if (proposal) {
     return (
-      <SubmissionResult
-        title="Parcel registered"
-        outcome={outcome}
-        ledger={ledger}
+      <ProposalCreated
+        submission={proposal}
         onAnother={reset}
-        anotherLabel="Register another parcel"
-        onRecordNext={() => setNextEventFor(outcome.parcelHash)}
+        anotherLabel="Propose another parcel"
+        onRecordNext={() => setNextEventFor(proposal.parcelHash)}
       />
     );
   }
@@ -193,10 +181,12 @@ export function RegisterParcelForm({ ledger }: { ledger: LedgerLinks | null }) {
       {failure && <SubmitError failure={failure} />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SubmitButton pending={pending}>Register parcel & anchor first event</SubmitButton>
+        <SubmitButton pending={pending} disabled={!adminAccountId}>
+          Propose registration for approval
+        </SubmitButton>
         <p className="m-0 text-sm text-muted">
-          Only <code className="font-mono">{"{ v, parcelHash, payloadHash }"}</code> goes on-chain.
-          The details stay in the database.
+          Only <code className="font-mono">{"{ v, parcelHash, payloadHash }"}</code> goes on-chain,
+          and only after enough administrators approve it in their wallets.
         </p>
       </div>
     </form>

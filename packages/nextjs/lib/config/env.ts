@@ -106,19 +106,6 @@ export function readDatabaseUrl(env: Env = process.env, key = "DATABASE_URL"): s
   return value;
 }
 
-const TOKEN_PLACEHOLDER = "change-me-to-a-long-random-string";
-
-/** Bearer token for the write API. The server co-signs submissions, so writes must be gated. */
-export function readSubmitterApiToken(env: Env = process.env): string {
-  const value = required(env, "SUBMITTER_API_TOKEN");
-  if (value === TOKEN_PLACEHOLDER) {
-    throw new ConfigError("SUBMITTER_API_TOKEN is still the .env.example placeholder");
-  }
-  if (value.length < 32)
-    throw new ConfigError("SUBMITTER_API_TOKEN must be at least 32 characters");
-  return value;
-}
-
 const MAX_APPROVAL_WINDOW_HOURS = 62 * 24; // Hedera's long-term schedule limit
 
 /** HCS_APPROVAL_WINDOW_HOURS: how long a proposal waits for wallet approvals (default 24h). */

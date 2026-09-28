@@ -1,9 +1,8 @@
-import { buildEnvelope, serializeEnvelope } from "@/lib/envelope/envelope";
-import { computeParcelHash } from "@/lib/hashing/parcel-hash";
-import { computePayloadHash } from "@/lib/hashing/payload-hash";
+import { MirrorNotFoundError } from "@/lib/mirror/http";
 import type { ScheduleState } from "@/lib/mirror/ledger-state";
 import type { MirrorClient } from "@/lib/mirror/mirror-client";
-import type { PendingStore, PendingSubmission } from "./ports";
+import { expectedEnvelope } from "./expected-envelope";
+import type { PendingStore } from "./ports";
 
 export class SubmissionNotFoundError extends Error {
   constructor(readonly id: string) {
@@ -32,18 +31,6 @@ const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && a.every((v, i) => v === b[i]);
 const consensusMs = (ts: string) => Number(ts.split(".")[0]) * 1000;
 
-/** The envelope the staged content SHOULD have produced, recomputed now (never read from storage). */
-async function expectedEnvelope(s: PendingSubmission): Promise<Uint8Array | null> {
-  if (
-    s.kind === "register-parcel" &&
-    (!s.parcel || (await computeParcelHash(s.parcel)) !== s.parcelHash)
-  )
-    return null;
-  return serializeEnvelope(
-    buildEnvelope({ parcelHash: s.parcelHash, payloadHash: await computePayloadHash(s.event) }),
-  );
-}
-
 /**
  * Move an approved submission into the read cache. HCS-first: the cache is written only once the
  * mirror node shows the executed topic message, and only if it matches the staged content.
@@ -67,13 +54,16 @@ export async function finalizeSubmission(id: string, deps: FinalizeDeps): Promis
     return { status: "rejected", reason };
   };
 
-  let expected: Uint8Array | null;
+  const expected = await expectedEnvelope(submission);
+  let schedule: ScheduleState;
   try {
-    expected = await expectedEnvelope(submission);
-  } catch {
-    expected = null; // staged content no longer normalizes
+    schedule = await deps.readSchedule(submission.scheduleId);
+  } catch (error) {
+    // A schedule created seconds ago may not be indexed by the mirror node yet.
+    if (error instanceof MirrorNotFoundError)
+      return { status: "pending", approvals: 0, awaitingMirror: true };
+    throw error;
   }
-  const schedule = await deps.readSchedule(submission.scheduleId);
   const scheduled = schedule.scheduledMessage;
   if (
     !expected ||

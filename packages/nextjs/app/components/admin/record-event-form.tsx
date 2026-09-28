@@ -2,11 +2,12 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import {
-  type ApiResult,
+  type ApiFailure,
   type ParcelSummary,
   fetchParcelSummary,
-  recordEvent,
+  proposeEvent,
 } from "@/lib/admin/api";
+import type { SubmissionDto } from "@/lib/approvals/dto";
 import {
   EMPTY_EVENT_FORM,
   type EventForm,
@@ -16,20 +17,19 @@ import {
   validateEventForm,
 } from "@/lib/admin/validation";
 import { parseTrackingId } from "@/lib/hashing/sha256";
-import type { LedgerLinks } from "@/lib/server/ledger-links";
-import { envelopeFor } from "./envelope-preview";
+import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
 import { Field, FormSection } from "./field";
-import { type SubmissionOutcome, SubmissionResult } from "./submission-result";
-import { SubmitButton, SubmitError } from "./submit-feedback";
-import { useSubmitterToken } from "./use-submitter-token";
+import { ProposalCreated } from "./proposal-created";
+import { SIGN_IN_FIRST, SubmitButton, SubmitError } from "./submit-feedback";
 
-type Failure = Extract<ApiResult<unknown>, { ok: false }>;
 type Lookup =
   | { state: "idle" }
   | { state: "loading" }
   | { state: "found"; summary: ParcelSummary }
   | { state: "missing"; message: string };
+
+const HASH_ERROR = "must be exactly 64 lower-case hexadecimal characters";
 
 function LookupStatus({ lookup }: { lookup: Lookup }) {
   if (lookup.state === "loading")
@@ -52,31 +52,25 @@ function LookupStatus({ lookup }: { lookup: Lookup }) {
   );
 }
 
-export function RecordEventForm({
-  initialParcelHash,
-  ledger,
-}: {
-  initialParcelHash: string;
-  ledger: LedgerLinks | null;
-}) {
-  const [token] = useSubmitterToken();
+const toLookup = (result: Awaited<ReturnType<typeof fetchParcelSummary>>): Lookup =>
+  result.ok
+    ? { state: "found", summary: result.data }
+    : { state: "missing", message: result.message };
+
+export function RecordEventForm({ initialParcelHash }: { initialParcelHash: string }) {
+  const { adminAccountId } = useAdmin();
   const [rawHash, setRawHash] = useState(initialParcelHash);
   const [lookup, setLookup] = useState<Lookup>({ state: "idle" });
   const [event, setEvent] = useState<EventForm>(EMPTY_EVENT_FORM);
   const [errors, setErrors] = useState<FormErrors<EventForm>>({});
   const [hashError, setHashError] = useState<string | undefined>();
   const [pending, setPending] = useState(false);
-  const [failure, setFailure] = useState<Failure | null>(null);
-  const [outcome, setOutcome] = useState<SubmissionOutcome | null>(null);
+  const [failure, setFailure] = useState<ApiFailure | null>(null);
+  const [proposal, setProposal] = useState<SubmissionDto | null>(null);
 
   const look = useCallback(async (hash: string) => {
     setLookup({ state: "loading" });
-    const result = await fetchParcelSummary(hash);
-    setLookup(
-      result.ok
-        ? { state: "found", summary: result.data }
-        : { state: "missing", message: result.message },
-    );
+    setLookup(toLookup(await fetchParcelSummary(hash)));
   }, []);
 
   useEffect(() => {
@@ -84,12 +78,7 @@ export function RecordEventForm({
     if (!hash) return;
     let cancelled = false;
     fetchParcelSummary(hash).then((result) => {
-      if (!cancelled)
-        setLookup(
-          result.ok
-            ? { state: "found", summary: result.data }
-            : { state: "missing", message: result.message },
-        );
+      if (!cancelled) setLookup(toLookup(result));
     });
     return () => {
       cancelled = true;
@@ -98,9 +87,7 @@ export function RecordEventForm({
 
   function onHashBlur() {
     const hash = parseTrackingId(rawHash);
-    setHashError(
-      rawHash && !hash ? "must be exactly 64 lower-case hexadecimal characters" : undefined,
-    );
+    setHashError(rawHash && !hash ? HASH_ERROR : undefined);
     if (hash) void look(hash);
   }
 
@@ -108,31 +95,21 @@ export function RecordEventForm({
     e.preventDefault();
     const parcelHash = parseTrackingId(rawHash);
     const eErrors = validateEventForm(event);
-    setHashError(parcelHash ? undefined : "must be exactly 64 lower-case hexadecimal characters");
+    setHashError(parcelHash ? undefined : HASH_ERROR);
     setErrors(eErrors);
     setFailure(null);
     if (!parcelHash || Object.keys(eErrors).length) return;
-    if (!token) {
-      setFailure({
-        ok: false,
-        status: 401,
-        code: "UNAUTHORIZED",
-        message: "Enter the submitter API token first.",
-      });
+    if (!adminAccountId) {
+      setFailure(SIGN_IN_FIRST);
       return;
     }
 
     setPending(true);
-    const payload = toEventPayload(event);
-    const result = await recordEvent(token, parcelHash, payload);
+    const result = await proposeEvent({ parcelHash, event: toEventPayload(event) });
     setPending(false);
 
     if (result.ok) {
-      setOutcome({
-        parcelHash,
-        hcsSequenceNumber: result.data.hcsSequenceNumber,
-        envelope: await envelopeFor(parcelHash, payload),
-      });
+      setProposal(result.data.submission);
       return;
     }
     setFailure(result);
@@ -141,20 +118,18 @@ export function RecordEventForm({
   }
 
   function another() {
-    setOutcome(null);
+    setProposal(null);
     setEvent(EMPTY_EVENT_FORM);
     const hash = parseTrackingId(rawHash);
     if (hash) void look(hash);
   }
 
-  if (outcome) {
+  if (proposal) {
     return (
-      <SubmissionResult
-        title="Event recorded"
-        outcome={outcome}
-        ledger={ledger}
+      <ProposalCreated
+        submission={proposal}
         onAnother={another}
-        anotherLabel="Record another event"
+        anotherLabel="Propose another event"
       />
     );
   }
@@ -170,7 +145,7 @@ export function RecordEventForm({
             onChange={(e) => setRawHash(e.target.value)}
             onBlur={onHashBlur}
             error={hashError}
-            placeholder="64 hexadecimal characters"
+            placeholder="64 lower-case hexadecimal characters"
             spellCheck={false}
             autoComplete="off"
             inputClassName="font-mono"
@@ -184,7 +159,9 @@ export function RecordEventForm({
       {failure && <SubmitError failure={failure} />}
 
       <div>
-        <SubmitButton pending={pending}>Anchor event on Hedera</SubmitButton>
+        <SubmitButton pending={pending} disabled={!adminAccountId}>
+          Propose event for approval
+        </SubmitButton>
       </div>
     </form>
   );

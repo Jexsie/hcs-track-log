@@ -123,3 +123,11 @@ export async function fetchSchedule(
     scheduledMessage: decodeScheduledTopicMessage(decodeBase64(body.transaction_body)),
   };
 }
+
+/** Simple public keys that make up a threshold / list key (e.g. a topic's submit key). */
+export function keyMembers(key: DecodedKey | null): PublicKey[] {
+  if (!key) return [];
+  if (key.kind === "threshold" || key.kind === "keyList") return key.keys.flatMap(keyMembers);
+  const single = toPublicKey(key);
+  return single ? [single] : [];
+}

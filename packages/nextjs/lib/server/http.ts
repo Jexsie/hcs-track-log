@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { ValidationError } from "@/lib/canonical/errors";
 import { ConfigError } from "@/lib/config/env";
 import { ThresholdKeyError } from "@/lib/hedera/threshold-key";
@@ -10,21 +9,6 @@ import {
 } from "@/lib/tracking/errors";
 
 export type Logger = (message: string, detail?: unknown) => void;
-
-export class UnauthorizedError extends Error {
-  constructor() {
-    super("missing or invalid bearer token");
-    this.name = "UnauthorizedError";
-  }
-}
-
-const digest = (value: string) => createHash("sha256").update(value).digest();
-
-/** Constant-time bearer-token check (digests make the comparison length-independent). */
-export function isAuthorized(request: Request, token: string): boolean {
-  const match = /^Bearer (.+)$/.exec(request.headers.get("authorization") ?? "");
-  return match?.[1] !== undefined && timingSafeEqual(digest(match[1]), digest(token));
-}
 
 export async function readJsonBody(request: Request): Promise<unknown> {
   try {
@@ -60,7 +44,6 @@ const isMisconfiguration = (error: unknown) =>
 
 /** Map domain errors to HTTP. Internal details are logged, never returned. */
 export function errorResponse(error: unknown, log: Logger = console.error): Response {
-  if (error instanceof UnauthorizedError) return failure(401, "UNAUTHORIZED", error.message);
   if (error instanceof ValidationError) {
     return failure(400, "VALIDATION_ERROR", error.message, { path: error.path });
   }

@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { fetchParcelSummary, recordEvent, registerParcel } from "./api";
+import {
+  createSession,
+  fetchParcelSummary,
+  finalizeSubmission,
+  getSession,
+  listSubmissions,
+  proposeEvent,
+  proposeRegistration,
+  requestChallenge,
+  signOut,
+} from "./api";
 
-const TOKEN = "t".repeat(40);
 const HASH = "a".repeat(64);
 
-function recorder(response: () => Response | Promise<Response>) {
+function recorder(response: () => Response) {
   const calls: { url: string; init: RequestInit | undefined }[] = [];
   const fetchImpl: typeof fetch = async (input, init) => {
     calls.push({ url: String(input), init });
@@ -13,29 +22,75 @@ function recorder(response: () => Response | Promise<Response>) {
   return { calls, fetchImpl };
 }
 
-describe("registerParcel", () => {
-  it("POSTs JSON with the bearer token and returns the tracking ID", async () => {
-    const { calls, fetchImpl } = recorder(() =>
-      Response.json(
-        { parcelHash: HASH, firstEvent: { hcsSequenceNumber: "7", payerAccountId: "0.0.1001" } },
-        { status: 201 },
-      ),
-    );
-    const result = await registerParcel(TOKEN, { parcel: {}, firstEvent: {} }, fetchImpl);
-    expect(result).toEqual({
-      ok: true,
-      data: {
-        parcelHash: HASH,
-        firstEvent: { hcsSequenceNumber: "7", payerAccountId: "0.0.1001" },
-      },
-    });
-    expect(calls[0]?.url).toBe("/api/parcels");
-    expect(calls[0]?.init?.method).toBe("POST");
-    expect(new Headers(calls[0]?.init?.headers).get("authorization")).toBe(`Bearer ${TOKEN}`);
-    expect(new Headers(calls[0]?.init?.headers).get("content-type")).toBe("application/json");
+const header = (init: RequestInit | undefined, name: string) =>
+  new Headers(init?.headers).get(name);
+
+describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () => {
+  it.each([
+    [
+      "requestChallenge",
+      (f: typeof fetch) => requestChallenge("0.0.100", f),
+      "/api/admin/auth/challenge",
+      "POST",
+      { accountId: "0.0.100" },
+    ],
+    [
+      "createSession",
+      (f: typeof fetch) =>
+        createSession({ accountId: "0.0.100", token: "t", signatureMap: "s" }, f),
+      "/api/admin/auth/session",
+      "POST",
+      { accountId: "0.0.100", token: "t", signatureMap: "s" },
+    ],
+    [
+      "proposeRegistration",
+      (f: typeof fetch) => proposeRegistration({ parcel: { a: 1 }, firstEvent: { b: 2 } }, f),
+      "/api/admin/submissions",
+      "POST",
+      { kind: "register-parcel", parcel: { a: 1 }, firstEvent: { b: 2 } },
+    ],
+    [
+      "proposeEvent",
+      (f: typeof fetch) => proposeEvent({ parcelHash: HASH, event: { b: 2 } }, f),
+      "/api/admin/submissions",
+      "POST",
+      { kind: "record-event", parcelHash: HASH, event: { b: 2 } },
+    ],
+    [
+      "finalizeSubmission",
+      (f: typeof fetch) => finalizeSubmission("id-1", f),
+      "/api/admin/submissions/finalize",
+      "POST",
+      { id: "id-1" },
+    ],
+  ] as const)("%s POSTs JSON to its endpoint", async (_name, call, url, method, body) => {
+    const { calls, fetchImpl } = recorder(() => Response.json({ ok: true }));
+    await call(fetchImpl);
+    expect(calls[0]?.url).toBe(url);
+    expect(calls[0]?.init?.method).toBe(method);
+    expect(header(calls[0]?.init, "content-type")).toBe("application/json");
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual(body);
+    expect(calls[0]?.init?.credentials).toBe("same-origin");
+    expect(header(calls[0]?.init, "authorization")).toBeNull();
   });
 
-  it("returns the API error (code, message, path)", async () => {
+  it("reads and ends the session with GET / DELETE", async () => {
+    const { calls, fetchImpl } = recorder(() => Response.json({ accountId: "0.0.100" }));
+    expect(await getSession(fetchImpl)).toEqual({ ok: true, data: { accountId: "0.0.100" } });
+    await signOut(fetchImpl);
+    expect(calls.map((c) => [c.url, c.init?.method])).toEqual([
+      ["/api/admin/auth/session", "GET"],
+      ["/api/admin/auth/session", "DELETE"],
+    ]);
+  });
+
+  it("lists submissions", async () => {
+    const { calls, fetchImpl } = recorder(() => Response.json({ submissions: [] }));
+    expect(await listSubmissions(fetchImpl)).toEqual({ ok: true, data: { submissions: [] } });
+    expect(calls[0]?.init?.method).toBe("GET");
+  });
+
+  it("returns API errors with code, message and path, and network failures", async () => {
     const { fetchImpl } = recorder(() =>
       Response.json(
         {
@@ -48,47 +103,23 @@ describe("registerParcel", () => {
         { status: 400 },
       ),
     );
-    expect(await registerParcel(TOKEN, {}, fetchImpl)).toEqual({
+    expect(await proposeEvent({ parcelHash: HASH, event: {} }, fetchImpl)).toEqual({
       ok: false,
       status: 400,
       code: "VALIDATION_ERROR",
       message: "carrier.scacCode must be 2–4 letters",
       path: "carrier.scacCode",
     });
-  });
-
-  it("reports network failures and non-JSON responses", async () => {
-    const down = await registerParcel(TOKEN, {}, async () => {
+    const down = await getSession(async () => {
       throw new TypeError("Failed to fetch");
     });
     expect(down).toMatchObject({ ok: false, status: 0, code: "NETWORK_ERROR" });
-    const html = await registerParcel(
-      TOKEN,
-      {},
-      async () => new Response("<html>", { status: 502 }),
-    );
-    expect(html).toMatchObject({ ok: false, status: 502, code: "BAD_RESPONSE" });
-  });
-});
-
-describe("recordEvent", () => {
-  it("POSTs the tracking ID and event in the body to /api/events", async () => {
-    const { calls, fetchImpl } = recorder(() =>
-      Response.json({ parcelHash: HASH, hcsSequenceNumber: "8" }, { status: 201 }),
-    );
-    const result = await recordEvent(TOKEN, HASH, { status: "Delivered" }, fetchImpl);
-    expect(result).toEqual({ ok: true, data: { parcelHash: HASH, hcsSequenceNumber: "8" } });
-    expect(calls[0]?.url).toBe("/api/events");
-    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
-      parcelHash: HASH,
-      event: { status: "Delivered" },
-    });
   });
 });
 
 describe("fetchParcelSummary", () => {
-  it("summarizes the parcel and its latest event", async () => {
-    const { fetchImpl } = recorder(() =>
+  it("summarizes the parcel and its latest event via the body-based lookup", async () => {
+    const { calls, fetchImpl } = recorder(() =>
       Response.json({
         parcelHash: HASH,
         parcel: { consignment: { description: "Coffee" } },
@@ -106,16 +137,6 @@ describe("fetchParcelSummary", () => {
         latest: { status: "In Transit", location: "Kampala", hcsSequenceNumber: "2" },
       },
     });
-  });
-
-  it("passes through a 404", async () => {
-    const { fetchImpl } = recorder(() =>
-      Response.json({ error: { code: "PARCEL_NOT_FOUND", message: "no parcel" } }, { status: 404 }),
-    );
-    expect(await fetchParcelSummary(HASH, fetchImpl)).toMatchObject({
-      ok: false,
-      status: 404,
-      code: "PARCEL_NOT_FOUND",
-    });
+    expect(calls[0]?.url).toBe("/api/parcels/lookup");
   });
 });

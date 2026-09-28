@@ -1,23 +1,20 @@
-import type { ApiResult } from "@/lib/admin/api";
-
-type Failure = Extract<ApiResult<unknown>, { ok: false }>;
+import type { ApiFailure } from "@/lib/admin/api";
 
 const HINT: Record<string, string> = {
-  UNAUTHORIZED:
-    "The submitter token was rejected. Forget it above and paste the current SUBMITTER_API_TOKEN.",
+  UNAUTHENTICATED: "Your administrator session has expired. Sign in again with your wallet above.",
+  NOT_A_SUBMITTER: "The connected wallet's key is not one of the topic's submit keys.",
   VALIDATION_ERROR: "Fix the highlighted field and submit again.",
-  PARCEL_NOT_FOUND: "No parcel has this tracking ID.",
-  PARCEL_EXISTS: "This parcel is already registered.",
+  PARCEL_NOT_FOUND: "No parcel has exactly this tracking ID.",
+  PARCEL_EXISTS: "This parcel is already registered or is already awaiting approval.",
   SUBMISSION_FAILED:
-    "The ledger did not accept the submission. Nothing was recorded; it is safe to retry.",
+    "Hedera did not accept the schedule. Nothing was proposed; it is safe to retry.",
   SERVER_MISCONFIGURED:
-    "The server's Hedera configuration is incomplete or the topic keys do not match. Nothing was recorded.",
-  CACHE_WRITE_FAILED:
-    "The event IS anchored on the ledger, but the database write failed. Do not resubmit: ask an operator to replay it from the server log.",
+    "The server's Hedera configuration is incomplete or the topic's keys do not match it. Nothing was proposed.",
+  LEDGER_UNAVAILABLE: "The Hedera mirror node did not respond. Nothing changed; retry in a moment.",
   NETWORK_ERROR: "Check your connection and retry.",
 };
 
-export function SubmitError({ failure }: { failure: Failure }) {
+export function SubmitError({ failure }: { failure: ApiFailure }) {
   return (
     <div className="rounded-xl border-2 border-danger bg-danger-soft px-4 py-3" role="alert">
       <strong className="block text-danger">{failure.message}</strong>
@@ -28,12 +25,20 @@ export function SubmitError({ failure }: { failure: Failure }) {
   );
 }
 
-export function SubmitButton({ pending, children }: { pending: boolean; children: string }) {
+export function SubmitButton({
+  pending,
+  disabled,
+  children,
+}: {
+  pending: boolean;
+  disabled?: boolean;
+  children: string;
+}) {
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-accent px-6 py-3 font-semibold text-white disabled:cursor-progress disabled:opacity-70"
+      disabled={pending || disabled}
+      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-accent px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending && (
         <span
@@ -41,7 +46,14 @@ export function SubmitButton({ pending, children }: { pending: boolean; children
           aria-hidden
         />
       )}
-      {pending ? "Anchoring on Hedera…" : children}
+      {pending ? "Scheduling on Hedera…" : children}
     </button>
   );
 }
+
+export const SIGN_IN_FIRST: ApiFailure = {
+  ok: false,
+  status: 401,
+  code: "UNAUTHENTICATED",
+  message: "Sign in with your administrator wallet first.",
+};

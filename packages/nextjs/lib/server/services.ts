@@ -1,17 +1,30 @@
 import type pg from "pg";
-import { readDatabaseUrl, readSubmitterApiToken } from "@/lib/config/env";
+import type { EnvelopeScheduler } from "@/lib/approvals/ports";
+import {
+  readAdminSessionSecret,
+  readDatabaseUrl,
+  readMirrorNodeUrl,
+  readTopicId,
+} from "@/lib/config/env";
+import { PendingSubmissionStore } from "@/lib/db/pending-store";
 import { createPool } from "@/lib/db/pool";
 import { PostgresTrackingReader } from "@/lib/db/tracking-reader";
 import { PostgresTrackingStore } from "@/lib/db/tracking-store";
-import { createSubmitterFromEnv } from "@/lib/hedera/submitter-from-env";
-import type { EnvelopeSubmitter } from "@/lib/tracking/ports";
+import { createSchedulerFromEnv } from "@/lib/hedera/scheduler-from-env";
+import {
+  fetchAccountKey,
+  fetchSchedule,
+  fetchTopicKeys,
+  keyMembers,
+} from "@/lib/mirror/ledger-state";
+import { createMirrorClient } from "@/lib/mirror/mirror-client";
+import { createAdminHandlers } from "./admin-handlers";
 import { consoleLogger } from "./http";
-import { createWriteHandlers } from "./write-handlers";
 
 /** Process-wide singletons, kept on globalThis so dev-server hot reloads do not leak pools. */
 interface Singletons {
   pool?: pg.Pool;
-  submitter?: Promise<EnvelopeSubmitter>;
+  scheduler?: Promise<EnvelopeScheduler>;
 }
 const singletons = ((globalThis as { __hcsTrackLog?: Singletons }).__hcsTrackLog ??= {});
 
@@ -23,19 +36,34 @@ export function getReader(): PostgresTrackingReader {
   return new PostgresTrackingReader(getPool());
 }
 
-function getSubmitter(): Promise<EnvelopeSubmitter> {
-  singletons.submitter ??= createSubmitterFromEnv().catch((error: unknown) => {
-    singletons.submitter = undefined; // retry on the next request instead of caching the failure
+function getScheduler(): Promise<EnvelopeScheduler> {
+  singletons.scheduler ??= createSchedulerFromEnv().catch((error: unknown) => {
+    singletons.scheduler = undefined; // retry on the next request instead of caching the failure
     throw error;
   });
-  return singletons.submitter;
+  return singletons.scheduler;
 }
 
-export function getWriteHandlers() {
-  return createWriteHandlers({
-    store: new PostgresTrackingStore(getPool()),
-    getSubmitter,
-    apiToken: readSubmitterApiToken,
+export function getAdminHandlers() {
+  const mirrorBaseUrl = readMirrorNodeUrl();
+  const topicId = readTopicId();
+  const pending = () => new PendingSubmissionStore(getPool());
+  return createAdminHandlers({
+    secret: readAdminSessionSecret,
+    now: () => new Date(),
+    secureCookies: process.env.NODE_ENV === "production",
+    // Authoritative: the submit key as it is on-chain right now, not as configured.
+    submitKeys: async () => keyMembers((await fetchTopicKeys(mirrorBaseUrl, topicId)).submitKey),
+    resolveAccountKey: (accountId) => fetchAccountKey(mirrorBaseUrl, accountId),
+    scheduler: getScheduler,
+    pending,
+    cache: () => new PostgresTrackingStore(getPool()),
+    finalizeDeps: () => ({
+      pending: pending(),
+      topicId,
+      readSchedule: (scheduleId) => fetchSchedule(mirrorBaseUrl, scheduleId),
+      messages: createMirrorClient({ baseUrl: mirrorBaseUrl, topicId }),
+    }),
     log: consoleLogger,
   });
 }

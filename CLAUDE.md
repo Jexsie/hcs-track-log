@@ -8,6 +8,8 @@
 ## Non-negotiable invariants
 - Hashing is **SHA-256** over canonicalized content. Never Keccak-256.
 - Write path is HCS-first: submit to the topic, and only after consensus success write to Postgres.
+  Proposals awaiting wallet approval are staged in `pending_submissions` (never read by the tracker or verifier);
+  they reach `parcels`/`cargo_events` only after the scheduled topic message executes and matches the recomputed envelope.
 - Verification **recomputes** the hash from Postgres content and compares to the on-chain `payloadHash`.
   Never verify a stored hash against the chain. There is no authoritative payload_hash column.
 - Only `{ v, parcelHash, payloadHash }` goes on-chain. No business metadata on the ledger.
