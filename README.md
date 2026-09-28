@@ -54,24 +54,28 @@ For the administrator console you also need:
 All variables live in `.env` at the repository root. `.env.example` holds placeholders only.
 **Never commit `.env`.**
 
-| Variable                               | Purpose                                                                                                |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `HEDERA_NETWORK`                       | `testnet`, `previewnet` or `mainnet`                                                                   |
-| `HEDERA_OPERATOR_ID`                   | Account that pays for topic creation and for schedules. It is **not** a submit key                     |
-| `HEDERA_OPERATOR_KEY`                  | Operator private key                                                                                   |
-| `HCS_TOPIC_ID`                         | Topic that receives event envelopes                                                                    |
-| `HCS_SUBMIT_PUBLIC_KEYS`               | Comma-separated public keys of the administrators' **wallet accounts**                                 |
-| `HCS_SUBMIT_THRESHOLD`                 | Wallet approvals required per message (2..N)                                                           |
-| `HCS_SUBMIT_SIGNER_KEYS`               | **Dev only:** private keys used by `npm run db:seed` to sign directly. The web server never reads them |
-| `HCS_ADMIN_PUBLIC_KEYS`                | Comma-separated public keys of topic administrators                                                    |
-| `HCS_ADMIN_THRESHOLD`                  | Admin signatures required to create, update or delete the topic                                        |
-| `HCS_ADMIN_SIGNER_KEYS`                | Admin private keys used **only** by `npm run topic:create`                                             |
-| `HCS_APPROVAL_WINDOW_HOURS`            | How long a proposal waits for approvals (default 24, max 1488 = 62 days)                               |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID for the admin console                                                   |
-| `ADMIN_SESSION_SECRET`                 | HMAC key for sign-in challenges and admin session cookies (≥ 32 chars)                                 |
-| `MIRROR_NODE_URL`                      | Mirror node base URL (default: the public one for `HEDERA_NETWORK`)                                    |
-| `DATABASE_URL`                         | Postgres connection string                                                                             |
-| `TEST_DATABASE_URL`                    | Test database; **its schema is dropped** on every `npm run test`. The name must end in `_test`         |
+<!-- AUTO-GENERATED:env (from .env.example; do not edit by hand) -->
+
+| Variable                               | Required             | Used by                              | Description                                                                                                                                                                                        |
+| -------------------------------------- | -------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HEDERA_NETWORK`                       | No                   | all                                  | testnet \| previewnet \| mainnet. Default `testnet`.                                                                                                                                               |
+| `HEDERA_OPERATOR_ID`                   | Yes                  | server, topic:create, db:seed        | Operator account: pays for topic creation and for approval schedules. It is NOT a submit key.                                                                                                      |
+| `HEDERA_OPERATOR_KEY`                  | Yes                  | server, topic:create, db:seed        | DER- or hex-encoded ECDSA/ED25519 private key. Placeholder — never commit a real key.                                                                                                              |
+| `HCS_TOPIC_ID`                         | Yes                  | server, verify, db:seed              | Filled in after `npm run topic:create`.                                                                                                                                                            |
+| `HCS_SUBMIT_PUBLIC_KEYS`               | Yes                  | server, topic:create                 | Public keys of the administrators' WALLET accounts (comma-separated). Every topic message must be approved from these wallets in the admin console; the web server never holds these private keys. |
+| `HCS_SUBMIT_THRESHOLD`                 | Yes                  | server, topic:create                 | How many wallet approvals each message needs (2..N).                                                                                                                                               |
+| `HCS_SUBMIT_SIGNER_KEYS`               | db:seed only         | db:seed                              | DEV ONLY: private keys `npm run db:seed` signs with directly. The web server never reads them.                                                                                                     |
+| `HCS_ADMIN_PUBLIC_KEYS`                | Yes                  | server, topic:create                 | Public keys of topic administrators (comma-separated). Required to create, update or delete the topic. The running server needs only these PUBLIC keys, to confirm the topic was not altered.      |
+| `HCS_ADMIN_THRESHOLD`                  | Yes                  | server, topic:create                 | How many admin signatures are required (2..N).                                                                                                                                                     |
+| `HCS_ADMIN_SIGNER_KEYS`                | topic:create only    | topic:create                         | Admin private keys, used ONLY by `npm run topic:create`. Remove them from the server afterwards.                                                                                                   |
+| `MIRROR_NODE_URL`                      | No                   | server, browser verification, verify | Default `https://<network>.mirrornode.hedera.com`.                                                                                                                                                 |
+| `DATABASE_URL`                         | Yes                  | server, db:migrate, db:seed, verify  | Matches docker-compose.yml defaults.                                                                                                                                                               |
+| `TEST_DATABASE_URL`                    | No                   | tests                                | Used by `npm run test`. Its schema is DROPPED on every run; the name must end in _test. Default `postgres://hcs:hcs@localhost:5432/hcs_track_log_test`.                                            |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | For the staff portal | staff portal (browser)               | WalletConnect Cloud project id from https://dashboard.reown.com (32 hex characters).                                                                                                               |
+| `ADMIN_SESSION_SECRET`                 | For the staff portal | server                               | HMAC key for sign-in challenges and admin session cookies. Generate: openssl rand -hex 32.                                                                                                         |
+| `HCS_APPROVAL_WINDOW_HOURS`            | No                   | server                               | How long a proposal waits for wallet approvals, in hours (1..1488; Hedera allows up to 62 days). Default `24`.                                                                                     |
+
+<!-- /AUTO-GENERATED:env -->
 
 ## Architecture
 
@@ -334,6 +338,20 @@ identifier ever appears in a URL.
 Errors use the shape `{ error: { code, message, path? } }`. Timestamps must include a UTC offset
 and have whole-second precision.
 
+### Route index
+
+<!-- AUTO-GENERATED:routes (from app/api/**/route.ts; do not edit by hand) -->
+
+| Route                             | Methods               | Access                                      | Source                                                        |
+| --------------------------------- | --------------------- | ------------------------------------------- | ------------------------------------------------------------- |
+| `/api/admin/auth/challenge`       | `POST`                | public                                      | `packages/nextjs/app/api/admin/auth/challenge/route.ts`       |
+| `/api/admin/auth/session`         | `POST` `GET` `DELETE` | `POST` public; `GET`/`DELETE` staff session | `packages/nextjs/app/api/admin/auth/session/route.ts`         |
+| `/api/admin/submissions/finalize` | `POST`                | staff session                               | `packages/nextjs/app/api/admin/submissions/finalize/route.ts` |
+| `/api/admin/submissions`          | `GET` `POST`          | staff session                               | `packages/nextjs/app/api/admin/submissions/route.ts`          |
+| `/api/parcels/lookup`             | `POST`                | public                                      | `packages/nextjs/app/api/parcels/lookup/route.ts`             |
+
+<!-- /AUTO-GENERATED:routes -->
+
 ### `payer_account_id`
 
 `cargo_events.payer_account_id` is a convenience copy only. It is **not** covered by
@@ -355,18 +373,32 @@ no emojis are used. Keep new copy consistent with this.
 
 ## Scripts
 
-| Command                 | Purpose                                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `npm run next:dev`      | Start the dev server                                                                            |
-| `npm run next:build`    | Production build                                                                                |
-| `npm run lint`          | ESLint + TypeScript type-check                                                                  |
-| `npm run test`          | Vitest: `unit` project + `db` project (needs Postgres)                                          |
-| `npm run format`        | Prettier                                                                                        |
-| `npm run keys:generate` | Generate dev submit + admin keypairs and print the `.env` lines (`-- --submit 2/3 --admin 2/3`) |
-| `npm run topic:create`  | Create the HCS topic with threshold admin and submit keys                                       |
-| `npm run db:migrate`    | Apply migrations (`-- --down` rolls back the latest)                                            |
-| `npm run db:seed`       | Anchor a demo parcel and its journey on HCS, then cache it                                      |
-| `npm run verify`        | Verify cached events against the topic by recomputation (`-- --topic <id>`)                     |
+<!-- AUTO-GENERATED:scripts (from package.json; do not edit by hand) -->
+
+| Command                 | Runs                                                              | Description                                                                                                    |
+| ----------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm run next:dev`      | `next dev`                                                        | Dev server: customer tracking at `/`, staff portal at `/admin`                                                 |
+| `npm run next:build`    | `next build`                                                      | Production build (type-checks)                                                                                 |
+| `npm run next:start`    | `next start`                                                      | Serve the production build                                                                                     |
+| `npm run lint`          | `eslint . && npm run typecheck --workspace=@hcs-track-log/nextjs` | ESLint, then `tsc --noEmit`                                                                                    |
+| `npm run format`        | `prettier --write .`                                              | Format everything with Prettier                                                                                |
+| `npm run format:check`  | `prettier --check .`                                              | Check formatting without writing (used by CI and hooks)                                                        |
+| `npm run test`          | `vitest run`                                                      | Vitest `unit` + `db` projects; the `db` project needs Postgres                                                 |
+| `npm run prepare`       | `husky`                                                           | Installs the husky pre-commit hook (runs on `npm install`)                                                     |
+| `npm run topic:create`  | `tsx scripts/create-topic.ts`                                     | Create the topic with threshold admin + submit keys and verify them on-chain                                   |
+| `npm run keys:generate` | `tsx scripts/generate-keys.ts`                                    | Print throwaway submit/admin key sets for local testing (`-- --submit 2/3 --admin 2/3`)                        |
+| `npm run db:migrate`    | `tsx scripts/migrate.ts`                                          | Apply pending migrations (`-- --down` rolls back the latest)                                                   |
+| `npm run db:seed`       | `tsx scripts/seed.ts`                                             | Dev only: anchor a demo shipment by signing directly with `HCS_SUBMIT_SIGNER_KEYS`                             |
+| `npm run verify`        | `tsx scripts/verify.ts`                                           | Recompute every cached update and compare it with the ledger (`-- --topic <id> [--parcel <id>] [--skip-scan]`) |
+| `npm run docs:generate` | `node scripts/generate-docs.mjs && prettier --write README.md`    | Regenerate these README tables from `package.json`, `.env.example` and the API routes                          |
+
+<!-- /AUTO-GENERATED:scripts -->
+
+## Further documentation
+
+- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md): development setup, tests, code style and the PR checklist.
+- [docs/RUNBOOK.md](docs/RUNBOOK.md): deploying, monitoring with `npm run verify`, common issues, rollback and escalation.
+- [AGENTS.md](AGENTS.md): architecture, invariants and a map of every important file.
 
 ## License
 

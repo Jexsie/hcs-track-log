@@ -70,6 +70,9 @@ on-chain anchor.
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CLAUDE.md`                                                        | Project standards and non-negotiable invariants                                                                                               |
 | `template.json`                                                    | scaffold-hbar manifest: capabilities, env vars, onboarding outro                                                                              |
+| `docs/CONTRIBUTING.md`                                             | Setup, tests, code style, commit and PR checklist                                                                                             |
+| `docs/RUNBOOK.md`                                                  | Deploy, health checks, `npm run verify` monitoring, common issues, rollback, escalation                                                       |
+| `scripts/generate-docs.mjs`                                        | `npm run docs:generate`: rebuilds the README's AUTO-GENERATED tables                                                                          |
 | `.env.example`                                                     | Placeholder environment configuration                                                                                                         |
 | `eslint.config.mjs`                                                | ESLint 9 flat config (Next + typescript-eslint strict, no `any`)                                                                              |
 | `.husky/pre-commit`                                                | Runs lint-staged (ESLint + Prettier on staged files)                                                                                          |
