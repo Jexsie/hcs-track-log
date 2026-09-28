@@ -118,7 +118,7 @@ No statuses, locations, carriers or descriptions go on-chain.
 1. Open `/` and enter a tracking ID. It is sent in a `POST /api/parcels/lookup` request **body**,
    never in the URL, so it stays out of the address bar, browser history, server access logs and
    `Referer` headers. The timeline renders in place, straight from Postgres (database-first).
-   Each row shows its `hcs_sequence_number`.
+   Events are listed latest first (by HCS sequence number), and each row shows its `hcs_sequence_number`.
    - **Lookup is exact.** The ID must match character for character. Only surrounding whitespace
      from a paste is trimmed. Upper case, a `0x` prefix, a partial ID or SQL wildcards find nothing,
      and every miss gets the same "no parcel" answer. The query is an equality match on the

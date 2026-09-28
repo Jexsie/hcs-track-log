@@ -1,6 +1,7 @@
 "use client";
 
 import type { TimelineDto } from "@/lib/timeline/dto";
+import { newestFirst } from "@/lib/timeline/order";
 import { EventCard } from "./event-card";
 import { ParcelSummary } from "./parcel-summary";
 import { useVerification } from "./use-verification";
@@ -46,11 +47,13 @@ export function TrackingView({
           className="mt-2 mb-3 flex items-baseline gap-2.5 text-lg font-bold"
         >
           Shipment timeline{" "}
-          <span className="text-sm font-normal text-muted">{timeline.events.length} events</span>
+          <span className="text-sm font-normal text-muted">
+            {timeline.events.length} events · latest first
+          </span>
         </h2>
         <ol className="m-0 grid gap-4 p-0">
-          {timeline.events.map((event, i) => (
-            <EventCard key={event.id} event={event} verdict={verification.events[i]} />
+          {newestFirst(timeline.events, verification.events).map(({ event, verdict }) => (
+            <EventCard key={event.id} event={event} verdict={verdict} />
           ))}
         </ol>
       </section>
