@@ -15,11 +15,13 @@ import {
   validateEventForm,
   validateParcelForm,
 } from "@/lib/admin/validation";
+import { sampleEventForm, sampleParcelForm } from "@/lib/admin/sample-data";
 import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
 import { Field, FormSection } from "./field";
 import { ProposalCreated } from "./proposal-created";
 import { RecordEventForm } from "./record-event-form";
+import { SampleDataButton } from "./sample-data-button";
 import { SIGN_IN_FIRST, SubmitButton, SubmitError } from "./submit-feedback";
 
 const PACKAGE_TYPES = ["Box", "Pallet", "Bag", "Crate", "Drum", "Envelope", "Container"];
@@ -68,6 +70,14 @@ export function RegisterParcelForm() {
     else if (field) setEventErrors({ [field]: result.message });
   }
 
+  function fillSample() {
+    setParcel(sampleParcelForm());
+    setEvent({ ...sampleEventForm(), status: "Booked" });
+    setParcelErrors({});
+    setEventErrors({});
+    setFailure(null);
+  }
+
   function reset() {
     setParcel(EMPTY_PARCEL_FORM);
     setEvent({ ...EMPTY_EVENT_FORM, status: "Booked" });
@@ -90,6 +100,7 @@ export function RegisterParcelForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-5">
+      <SampleDataButton onFill={fillSample} disabled={pending} />
       <fieldset disabled={pending} className="m-0 grid min-w-0 gap-5 border-0 p-0">
         <FormSection
           title="Consignment"

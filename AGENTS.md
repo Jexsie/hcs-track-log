@@ -152,6 +152,7 @@ on-chain anchor.
 | `packages/nextjs/app/components/admin/approvals-list.tsx`          | All open proposals                                                                                                                            |
 | `packages/nextjs/app/components/admin/proposal-created.tsx`        | Post-proposal panel with the approval card                                                                                                    |
 | `packages/nextjs/app/components/admin/submission-summary.tsx`      | The exact content being approved                                                                                                              |
+| `packages/nextjs/app/components/admin/sample-data-button.tsx`      | "Fill sample data" button, hidden on mainnet                                                                                                  |
 | `packages/nextjs/test/integration/approvals.testnet.db.test.ts`    | Opt-in live proof of the whole approval lifecycle on testnet                                                                                  |
 | `packages/nextjs/test/wallet-signing.ts`                           | Signs like a HIP-820 wallet (tests)                                                                                                           |
 | `packages/nextjs/test/proto-writer.ts`                             | Test-only protobuf writers                                                                                                                    |
@@ -185,6 +186,7 @@ on-chain anchor.
 | `packages/nextjs/lib/admin/validation.ts`                          | Form state, per-field validation using the shared normalizers, payload builders, server path → field map                                      |
 | `packages/nextjs/lib/admin/datetime.ts`                            | `datetime-local` ⇄ canonical UTC                                                                                                              |
 | `packages/nextjs/lib/admin/api.ts`                                 | Browser client for the write API and parcel lookup                                                                                            |
+| `packages/nextjs/lib/admin/sample-data.ts`                         | Random valid demo form data (test networks only)                                                                                              |
 | `packages/nextjs/lib/server/ledger-links.ts`                       | Topic id + mirror URL for links (null when unconfigured)                                                                                      |
 | `packages/nextjs/app/components/tracking-view.tsx`                 | Client view: renders the timeline and streams in verdicts                                                                                     |
 | `packages/nextjs/app/components/use-verification.ts`               | In-browser verification hook (recompute + mirror node, retry)                                                                                 |

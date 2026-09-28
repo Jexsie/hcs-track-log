@@ -214,7 +214,7 @@ admin A, B, …: /admin/approvals → browser checks the schedule vs. content �
    If staged content doesn't match the chain, it is marked `rejected` and never cached. Proposals
    not approved within `HCS_APPROVAL_WINDOW_HOURS` expire.
 
-Form validation uses the same normalizers as the server. Event times are entered in local time and
+On testnet and previewnet, both forms have a **Fill sample data** button that fills them with random, valid demo data. It never appears on mainnet. Form validation uses the same normalizers as the server. Event times are entered in local time and
 converted to canonical UTC.
 
 ### Why recompute?

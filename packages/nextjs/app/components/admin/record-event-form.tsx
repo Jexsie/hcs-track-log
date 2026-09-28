@@ -17,10 +17,12 @@ import {
   validateEventForm,
 } from "@/lib/admin/validation";
 import { parseTrackingId } from "@/lib/hashing/sha256";
+import { sampleEventForm } from "@/lib/admin/sample-data";
 import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
 import { Field, FormSection } from "./field";
 import { ProposalCreated } from "./proposal-created";
+import { SampleDataButton } from "./sample-data-button";
 import { SIGN_IN_FIRST, SubmitButton, SubmitError } from "./submit-feedback";
 
 type Lookup =
@@ -136,6 +138,14 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-5">
+      <SampleDataButton
+        onFill={() => {
+          setEvent(sampleEventForm());
+          setErrors({});
+          setFailure(null);
+        }}
+        disabled={pending}
+      />
       <fieldset disabled={pending} className="m-0 grid min-w-0 gap-5 border-0 p-0">
         <FormSection title="Parcel">
           <Field
