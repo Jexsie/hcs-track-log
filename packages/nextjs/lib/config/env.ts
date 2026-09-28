@@ -118,3 +118,34 @@ export function readSubmitterApiToken(env: Env = process.env): string {
     throw new ConfigError("SUBMITTER_API_TOKEN must be at least 32 characters");
   return value;
 }
+
+const MAX_APPROVAL_WINDOW_HOURS = 62 * 24; // Hedera's long-term schedule limit
+
+/** HCS_APPROVAL_WINDOW_HOURS: how long a proposal waits for wallet approvals (default 24h). */
+export function readApprovalWindowMs(env: Env = process.env): number {
+  const raw = env.HCS_APPROVAL_WINDOW_HOURS?.trim() || "24";
+  const hours = Number(raw);
+  if (!Number.isInteger(hours) || hours < 1 || hours > MAX_APPROVAL_WINDOW_HOURS) {
+    throw new ConfigError(
+      `HCS_APPROVAL_WINDOW_HOURS must be an integer from 1 to ${MAX_APPROVAL_WINDOW_HOURS}, got "${raw}"`,
+    );
+  }
+  return hours * 3_600_000;
+}
+
+/** ADMIN_SESSION_SECRET: HMAC key for sign-in challenges and admin session cookies. */
+export function readAdminSessionSecret(env: Env = process.env): string {
+  const value = required(env, "ADMIN_SESSION_SECRET");
+  if (value === "change-me-to-a-long-random-string") {
+    throw new ConfigError("ADMIN_SESSION_SECRET is still the .env.example placeholder");
+  }
+  if (value.length < 32)
+    throw new ConfigError("ADMIN_SESSION_SECRET must be at least 32 characters");
+  return value;
+}
+
+/** NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID from dashboard.reown.com; null when not configured. */
+export function readWalletConnectProjectId(env: Env = process.env): string | null {
+  const value = env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim();
+  return value && /^[0-9a-f]{32}$/i.test(value) ? value : null;
+}

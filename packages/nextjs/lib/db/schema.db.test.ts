@@ -56,6 +56,7 @@ describe("schema", () => {
     expect(rows).toEqual([
       { table_name: "cargo_events", column_name: "parcel_hash" },
       { table_name: "parcels", column_name: "parcel_hash" },
+      { table_name: "pending_submissions", column_name: "parcel_hash" },
     ]);
   });
 
@@ -77,7 +78,7 @@ describe("schema", () => {
 
   it("migrations roll back and re-apply cleanly", async () => {
     await migrate(TEST_DATABASE_URL, "down", () => {});
-    const { rows } = await pool.query(`SELECT to_regclass('public.parcels') AS t`);
+    const { rows } = await pool.query(`SELECT to_regclass('public.pending_submissions') AS t`);
     expect(rows[0]).toEqual({ t: null });
     await migrate(TEST_DATABASE_URL, "up", () => {});
     expect(Object.keys(await columns("parcels"))).toContain("parcel_hash");
