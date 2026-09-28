@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { EventDto } from "@/lib/timeline/dto";
 import { explorerTopicUrl } from "@/lib/timeline/explorer";
 import { formatUtc } from "@/lib/timeline/format";
@@ -16,71 +15,67 @@ const REASON: Record<Extract<EventVerdict, { status: "tampered" }>["reason"], st
   "no-anchor": "The original record for this update is missing.",
 };
 
-const DOT: Record<RowState, string> = {
-  pending: "border-muted bg-surface",
-  verified: "border-ok bg-ok",
-  tampered: "border-danger bg-danger",
-  unavailable: "border-warn bg-surface",
-};
-
-const CARD: Record<RowState, string> = {
-  // Sheen sweeps across cards that are still being checked.
-  pending:
-    "border border-line after:pointer-events-none after:absolute after:inset-0 after:animate-sheen after:bg-[linear-gradient(100deg,transparent_20%,var(--sheen)_50%,transparent_80%)] motion-reduce:after:animate-none",
-  verified: "border border-line",
-  tampered: "border-2 border-danger",
-  unavailable: "border border-line",
-};
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5 text-sm wrap-anywhere">{children}</dd>
-    </div>
-  );
-}
-
+/** A stop on the route. The newest stop is highlighted; older stops stay quiet. */
 export function EventCard({
   event,
   verdict,
   network,
   topicId,
+  latest = false,
 }: {
   event: EventDto;
   verdict: EventVerdict | undefined;
   network: HederaNetwork;
   topicId: string;
+  latest?: boolean;
 }) {
   const { content } = event;
   const state: RowState = verdict?.status ?? "pending";
   const recordsUrl = explorerTopicUrl(network, topicId);
+  const dot =
+    state === "tampered"
+      ? "border-danger bg-danger"
+      : latest
+        ? "border-cargo bg-cargo ring-4 ring-cargo-soft"
+        : state === "verified"
+          ? "border-ok bg-surface"
+          : "border-line bg-surface";
+
   return (
-    <li className="relative list-none pl-8 before:absolute before:top-0 before:-bottom-4 before:left-[9px] before:w-0.5 before:bg-line last:before:bottom-auto last:before:h-6">
+    <li className="relative list-none pb-6 pl-9 last:pb-0 before:absolute before:top-5 before:bottom-0 before:left-[9px] before:w-0.5 before:bg-line last:before:hidden">
       <span
-        className={`absolute top-5 left-[3px] size-3.5 rounded-full border-[3px] ${DOT[state]}`}
+        className={`absolute top-1.5 left-[3px] size-3.5 rounded-full border-2 ${dot}`}
         aria-hidden
       />
       <article
-        className={`relative overflow-hidden rounded-xl bg-surface px-4.5 py-4 ${CARD[state]}`}
+        className={`relative overflow-hidden rounded-lg ${state === "tampered" ? "border-2 border-danger p-3" : ""} ${
+          state === "pending"
+            ? "after:pointer-events-none after:absolute after:inset-0 after:animate-sheen after:bg-[linear-gradient(100deg,transparent_20%,var(--sheen)_50%,transparent_80%)] motion-reduce:after:animate-none"
+            : ""
+        }`}
         aria-busy={!verdict}
       >
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="m-0 text-[1.05rem] font-bold">{content.status}</h3>
-          <VerdictBadge verdict={verdict} network={network} />
+        <header className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <h3 className={`m-0 ${latest ? "text-lg font-bold" : "text-base font-semibold"}`}>
+            {content.status}
+          </h3>
+          {latest && (
+            <span className="rounded bg-cargo-soft px-1.5 py-0.5 text-xs font-semibold text-cargo">
+              Latest
+            </span>
+          )}
+          <span className="ml-auto">
+            <VerdictBadge verdict={verdict} network={network} />
+          </span>
         </header>
-        <p className="mt-1 mb-3 text-muted">{content.location}</p>
-        <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-x-4 gap-y-2">
-          <Field label="Time">{formatUtc(content.timestamp)}</Field>
-          <Field label="Carrier">{content.carrier.name}</Field>
-          <Field label="Record">#{event.hcsSequenceNumber}</Field>
-        </dl>
+        <p className={`mt-0.5 mb-0 ${latest ? "text-fg" : "text-muted"}`}>{content.location}</p>
+        <p className="mt-1 mb-0 text-xs text-muted tabular-nums">
+          {formatUtc(content.timestamp)} · {content.carrier.name} · Record #
+          {event.hcsSequenceNumber}
+        </p>
 
         {verdict?.status === "tampered" && (
-          <p
-            className="mt-3.5 mb-0 rounded-[10px] bg-danger-soft px-3.5 py-3 text-sm text-danger"
-            role="alert"
-          >
+          <p className="mt-2.5 mb-0 text-sm text-danger" role="alert">
             <strong>Warning:</strong> {REASON[verdict.reason]}{" "}
             {recordsUrl && (
               <a
@@ -94,9 +89,10 @@ export function EventCard({
             )}
           </p>
         )}
-
         {verdict?.status === "unavailable" && (
-          <p className="mt-3 mb-0 text-sm text-warn">This update could not be checked right now.</p>
+          <p className="mt-1.5 mb-0 text-sm text-warn">
+            This update could not be checked right now.
+          </p>
         )}
       </article>
     </li>

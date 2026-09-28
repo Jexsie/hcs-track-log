@@ -29,6 +29,7 @@ export function TrackingView({
     parcelTampered: verification.parcel?.status === "tampered",
   };
   for (const v of verification.events) if (v) counts[v.status]++;
+  const stops = newestFirst(timeline.events, verification.events);
 
   return (
     <div className="grid gap-5">
@@ -41,23 +42,25 @@ export function TrackingView({
       <ParcelSummary
         parcelHash={timeline.parcelHash}
         parcel={timeline.parcel}
+        latest={stops[0]?.event.content ?? null}
         verdict={verification.parcel}
       />
-      <section aria-labelledby="timeline-heading">
-        <h2
-          id="timeline-heading"
-          className="mt-2 mb-3 flex items-baseline gap-2.5 text-lg font-bold"
-        >
-          Updates <span className="text-sm font-normal text-muted">latest first</span>
+      <section
+        aria-labelledby="timeline-heading"
+        className="rounded-2xl border border-line bg-surface p-5 sm:p-6"
+      >
+        <h2 id="timeline-heading" className="mt-1 mb-4 text-base font-bold">
+          Journey <span className="font-normal text-muted">· {timeline.events.length} updates</span>
         </h2>
-        <ol className="m-0 grid gap-4 p-0">
-          {newestFirst(timeline.events, verification.events).map(({ event, verdict }) => (
+        <ol className="m-0 p-0">
+          {stops.map(({ event, verdict }, i) => (
             <EventCard
               key={event.id}
               event={event}
               verdict={verdict}
               network={network}
               topicId={topicId}
+              latest={i === 0}
             />
           ))}
         </ol>

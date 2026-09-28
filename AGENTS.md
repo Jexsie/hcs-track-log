@@ -197,7 +197,10 @@ on-chain anchor.
 | `packages/nextjs/app/components/verdict-badge.tsx`                 | Per-event verdict pill (checking / verified link / tampered / unreachable)                                                                    |
 | `packages/nextjs/lib/brand.ts`                                     | Demo company branding (Kivu Cargo): name, portal label, booking prefix, own carrier                                                           |
 | `packages/nextjs/app/components/brand-mark.tsx`                    | Logo + company name used in both headers                                                                                                      |
-| `packages/nextjs/app/components/parcel-summary.tsx`                | Parcel details and tracking-ID recompute check                                                                                                |
+| `packages/nextjs/app/components/icons.tsx`                         | Inline stroke icons (search, check, alert, copy, pin, external)                                                                               |
+| `packages/nextjs/app/components/copy-button.tsx`                   | Copy-to-clipboard button (tracking ID)                                                                                                        |
+| `packages/nextjs/app/components/admin/staff-nav.tsx`               | Staff navigation with the current page highlighted                                                                                            |
+| `packages/nextjs/app/components/parcel-summary.tsx`                | Waybill: current status, route (shipper → consignee), facts, tracking ID                                                                      |
 | `packages/nextjs/scripts/verify.ts`                                | `npm run verify`                                                                                                                              |
 | `packages/nextjs/test/fake-ledger.ts`                              | In-memory topic serving mirror-node-shaped HTTP responses                                                                                     |
 

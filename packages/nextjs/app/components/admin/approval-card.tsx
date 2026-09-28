@@ -162,7 +162,7 @@ export function ApprovalCard({
 
   return (
     <article
-      className="grid gap-4 rounded-[14px] border border-line bg-surface p-5"
+      className="grid gap-3 rounded-xl border border-line bg-surface p-4"
       aria-busy={phase !== "idle"}
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">

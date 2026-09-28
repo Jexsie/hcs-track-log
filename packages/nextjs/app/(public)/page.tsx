@@ -11,7 +11,7 @@ export default function HomePage() {
         <h1 className="mb-2 text-[clamp(1.7rem,4vw,2.3rem)] leading-tight font-bold">
           Track your shipment
         </h1>
-        <p className="mb-6 max-w-[58ch] text-muted">
+        <p className="mb-6 max-w-[52ch] text-muted">
           Every update is recorded on Hedera, a public ledger, so you can see your cargo&apos;s
           journey and know nothing has been changed.
         </p>

@@ -1,9 +1,10 @@
-import type { HederaNetwork } from "@/lib/wallet/hip820";
 import { explorerRecordUrl } from "@/lib/timeline/explorer";
 import type { EventVerdict } from "@/lib/verify/verdicts";
+import type { HederaNetwork } from "@/lib/wallet/hip820";
+import { AlertIcon, CheckIcon } from "./icons";
 
 const BASE =
-  "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold no-underline";
+  "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold no-underline";
 
 export function VerdictBadge({
   verdict,
@@ -25,6 +26,11 @@ export function VerdictBadge({
   }
   if (verdict.status === "verified") {
     const href = explorerRecordUrl(network, verdict.consensusTimestamp);
+    const content = (
+      <>
+        <CheckIcon className="size-3.5" /> Verified
+      </>
+    );
     return href ? (
       <a
         className={`${BASE} bg-ok-soft text-ok hover:underline`}
@@ -33,13 +39,18 @@ export function VerdictBadge({
         rel="noreferrer"
         title="View the original record"
       >
-        Verified
+        {content}
       </a>
     ) : (
-      <span className={`${BASE} bg-ok-soft text-ok`}>Verified</span>
+      <span className={`${BASE} bg-ok-soft text-ok`}>{content}</span>
     );
   }
-  if (verdict.status === "tampered")
-    return <span className={`${BASE} bg-danger text-white`}>Changed</span>;
+  if (verdict.status === "tampered") {
+    return (
+      <span className={`${BASE} bg-danger text-white`}>
+        <AlertIcon className="size-3.5" /> Changed
+      </span>
+    );
+  }
   return <span className={`${BASE} bg-warn-soft text-warn`}>Not checked</span>;
 }

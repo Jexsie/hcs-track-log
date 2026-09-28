@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { type AdminConfig, AdminProvider } from "@/app/components/admin/admin-context";
+import { StaffNav } from "@/app/components/admin/staff-nav";
 import { WalletPanel } from "@/app/components/admin/wallet-panel";
 import { BrandMark } from "@/app/components/brand-mark";
 import { BRAND } from "@/lib/brand";
@@ -19,12 +20,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const NAV = [
-  { href: "/admin/parcels/new", label: "New shipment" },
-  { href: "/admin/events/new", label: "Add update" },
-  { href: "/admin/approvals", label: "Approvals" },
-];
 
 function readConfig(): AdminConfig | null {
   try {
@@ -56,17 +51,7 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
               {BRAND.portal}
             </span>
           </Link>
-          <nav aria-label="Staff" className="flex flex-wrap gap-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-band-fg no-underline hover:bg-white/10"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <StaffNav />
           <Link
             href="/"
             className="ml-auto text-sm text-band-fg/80 no-underline hover:text-band-fg"

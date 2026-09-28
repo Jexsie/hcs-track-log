@@ -12,6 +12,9 @@
   --ok: #17803d;
   --ok-soft: #e7f6ec;
   --warn: #9a5b00;
+  /* Cargo amber: route and in-transit accents, a second hue next to the brand accent. */
+  --cargo: #c2620a;
+  --cargo-soft: #fff1e0;
   --warn-soft: #fff4e0;
   --danger: #c4231c;
   --danger-soft: #fdecea;
@@ -33,6 +36,8 @@
     --ok: #3fb950;
     --ok-soft: #12261a;
     --warn: #e3a33b;
+    --cargo: #f0a04b;
+    --cargo-soft: #2e2012;
     --warn-soft: #2b2112;
     --danger: #ff6b61;
     --danger-soft: #2d1414;
@@ -79,6 +84,8 @@
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
+  --color-cargo: var(--cargo);
+  --color-cargo-soft: var(--cargo-soft);
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);

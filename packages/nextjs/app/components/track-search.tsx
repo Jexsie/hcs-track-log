@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import type { LedgerLinks } from "@/lib/server/ledger-links";
 import { type LookupResult, lookupTimeline } from "@/lib/timeline/lookup-client";
+import { SearchIcon } from "./icons";
 import { Notice } from "./page-shell";
 import { TrackingView } from "./tracking-view";
 
@@ -36,17 +37,20 @@ export function TrackSearch({ ledger }: { ledger: LedgerLinks | null }) {
         <label htmlFor="tracking-id" className="sr-only">
           Tracking ID
         </label>
-        <input
-          id="tracking-id"
-          name="trackingId"
-          className="min-w-0 flex-1 rounded-[10px] border border-line bg-surface px-3.5 py-3 text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Enter tracking ID"
-          spellCheck={false}
-        />
+        <div className="relative flex min-w-0 flex-1 items-center">
+          <SearchIcon className="pointer-events-none absolute left-3.5 size-5 text-muted" />
+          <input
+            id="tracking-id"
+            name="trackingId"
+            className="w-full min-w-0 rounded-xl border border-line bg-surface py-3.5 pr-3.5 pl-11 text-base text-fg shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Enter tracking ID"
+            spellCheck={false}
+          />
+        </div>
         <button
-          className="cursor-pointer rounded-[10px] bg-accent px-6 py-3 font-semibold text-white disabled:cursor-progress disabled:opacity-70"
+          className="cursor-pointer rounded-xl bg-accent px-7 py-3.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           type="submit"
           disabled={state.status === "loading" || value.trim() === ""}
         >
