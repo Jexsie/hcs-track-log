@@ -90,3 +90,18 @@ export function isSameThresholdKey(actual: Key | null, expected: KeyList): boole
     a.length === actual.toArray().length && a.length === b.length && a.every((k, i) => k === b[i])
   );
 }
+
+/**
+ * The operator pays for (and therefore signs) every ScheduleCreate, and Hedera counts those
+ * signatures toward the scheduled transaction. If the operator's key were a submit key, the server
+ * would silently provide one approval on every proposal, so fewer humans than the threshold could
+ * publish. Refuse that configuration.
+ */
+export function assertOperatorNotSubmitter(operatorKey: PublicKey, submitKey: KeyList): void {
+  if (members(submitKey).some((k) => k.equals(operatorKey))) {
+    throw new ThresholdKeyError(
+      "the operator's key must not be one of the topic's submit keys: it signs every schedule it pays for, " +
+        "which would count as an approval. Use a separate operator account.",
+    );
+  }
+}

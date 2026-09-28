@@ -60,7 +60,7 @@ on-chain anchor.
    are ISO-8601 UTC with a `Z` suffix.
 5. **SHA-256 only.** Never Keccak-256.
 6. **No business metadata on-chain.** The envelope is `{ v, parcelHash, payloadHash }` only; schedule memos carry only an opaque submission UUID.
-7. **Both topic keys are threshold keys, enforced by the network.** The submit key (≥2 of N) gates every message; the admin key (≥2 of N) gates topic updates and deletion. The web server holds **no** submit key: messages execute only after enough administrators approve the schedule in their own wallets.
+7. **Both topic keys are threshold keys, enforced by the network.** The submit key (≥2 of N) gates every message; the admin key (≥2 of N) gates topic updates and deletion. The web server holds **no** submit key: messages execute only after enough administrators approve the schedule in their own wallets. The operator (which pays for, and so signs, every ScheduleCreate) must never be a submit key; `assertOperatorNotSubmitter` enforces this in `topic:create` and the server.
 8. **`.env` is never committed.** `.env.example` holds placeholders only.
 9. **npm only.** Never yarn or pnpm. No Solidity.
 

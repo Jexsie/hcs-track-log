@@ -85,6 +85,7 @@ describe("approvalProgress", () => {
     expect(progress).toEqual({
       approvals: 1,
       required: 2,
+      authorizedKeys: 3,
       alreadySignedByYou: true,
       youCanApprove: true,
     });

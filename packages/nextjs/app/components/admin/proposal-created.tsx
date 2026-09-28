@@ -25,11 +25,11 @@ export function ProposalCreated({
         <p className="mt-1 mb-0 text-sm text-muted">
           A Hedera scheduled transaction now holds this envelope. It is written to the topic, and
           then to the tracker, only after the required number of administrators approve it in their
-          wallets. Other administrators will see it under{" "}
-          <Link href="/admin/approvals">Approvals</Link>.
+          wallets. As the proposer, your approval counts first: your wallet will ask you to confirm
+          it. Other administrators will see it under <Link href="/admin/approvals">Approvals</Link>.
         </p>
       </div>
-      <ApprovalCard submission={submission} />
+      <ApprovalCard submission={submission} autoApprove />
       <div className="flex flex-wrap gap-2">
         {onRecordNext && (
           <button

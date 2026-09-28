@@ -8,7 +8,8 @@ import {
 import { createClient } from "./client";
 import { assertTopicKeys } from "./create-topic";
 import { HcsScheduler } from "./hcs-scheduler";
-import { parseThresholdKey } from "./threshold-key";
+import { parsePrivateKey } from "./keys";
+import { assertOperatorNotSubmitter, parseThresholdKey } from "./threshold-key";
 
 /**
  * Build the scheduler from env and confirm on-chain that the topic carries exactly the configured
@@ -21,7 +22,12 @@ export async function createSchedulerFromEnv(
   const topicId = TopicId.fromString(readTopicId(env));
   const submitKey = parseThresholdKey(readKeyConfig("submit", env), "submit");
   const adminKey = parseThresholdKey(readKeyConfig("admin", env), "admin");
-  const client = createClient(readOperatorConfig(env));
+  const operator = readOperatorConfig(env);
+  assertOperatorNotSubmitter(
+    parsePrivateKey(operator.operatorKey, "HEDERA_OPERATOR_KEY").publicKey,
+    submitKey,
+  );
+  const client = createClient(operator);
   try {
     await assertTopicKeys(client, topicId, { adminKey, submitKey });
     return new HcsScheduler({ client, topicId, approvalWindowMs: readApprovalWindowMs(env) });

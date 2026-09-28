@@ -4,6 +4,7 @@ import {
   ThresholdKeyError,
   assertSignersSatisfy,
   buildThresholdKey,
+  assertOperatorNotSubmitter,
   isSameThresholdKey,
   parseSignerKeys,
   parseThresholdKey,
@@ -90,5 +91,20 @@ describe("parsing from configuration", () => {
   it("parses signer private keys and labels bad entries by env var", () => {
     expect(parseSignerKeys([ka.toStringDer()], "submit")[0]?.publicKey.equals(a)).toBe(true);
     expect(() => parseSignerKeys(["bad"], "submit")).toThrow("HCS_SUBMIT_SIGNER_KEYS[0]");
+  });
+});
+
+describe("assertOperatorNotSubmitter", () => {
+  it("refuses a submit key that includes the operator's key (the operator signs every ScheduleCreate)", () => {
+    const key = buildThresholdKey(pubs, 2, "submit");
+    expect(() => assertOperatorNotSubmitter(b, key)).toThrow(ThresholdKeyError);
+    expect(() => assertOperatorNotSubmitter(b, key)).toThrow("operator");
+  });
+
+  it("accepts an operator that is not a submit-key member", () => {
+    const outsider = PrivateKey.generateED25519().publicKey;
+    expect(() =>
+      assertOperatorNotSubmitter(outsider, buildThresholdKey(pubs, 2, "submit")),
+    ).not.toThrow();
   });
 });

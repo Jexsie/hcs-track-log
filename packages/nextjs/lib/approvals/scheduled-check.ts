@@ -34,6 +34,8 @@ export function checkScheduledMessage(
 export interface ApprovalProgress {
   approvals: number;
   required: number;
+  /** How many keys are authorized to approve (members of the submit key). */
+  authorizedKeys: number;
   alreadySignedByYou: boolean;
   /** Your wallet's key is one of the submit keys. */
   youCanApprove: boolean;
@@ -58,6 +60,7 @@ export function approvalProgress(
   return {
     approvals: signed.length,
     required: requiredSignatures(submitKey),
+    authorizedKeys: members.length,
     alreadySignedByYou: yours !== undefined && signed.some((m) => sameBytes(m, yours)),
     youCanApprove: yours !== undefined && members.some((m) => sameBytes(m, yours)),
   };

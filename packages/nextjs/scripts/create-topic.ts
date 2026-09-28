@@ -10,7 +10,12 @@ import { readKeyConfig, readOperatorConfig, readSignerKeys } from "@/lib/config/
 import { loadRootEnv } from "@/lib/config/load-env";
 import { createClient } from "@/lib/hedera/client";
 import { createTrackingTopic } from "@/lib/hedera/create-topic";
-import { parseSignerKeys, parseThresholdKey } from "@/lib/hedera/threshold-key";
+import { parsePrivateKey } from "@/lib/hedera/keys";
+import {
+  assertOperatorNotSubmitter,
+  parseSignerKeys,
+  parseThresholdKey,
+} from "@/lib/hedera/threshold-key";
 
 async function main(): Promise<void> {
   loadRootEnv();
@@ -20,6 +25,10 @@ async function main(): Promise<void> {
   const submitKey = parseThresholdKey(submit, "submit");
   const adminKey = parseThresholdKey(admin, "admin");
   const adminSigners = parseSignerKeys(readSignerKeys("admin"), "admin");
+  assertOperatorNotSubmitter(
+    parsePrivateKey(operator.operatorKey, "HEDERA_OPERATOR_KEY").publicKey,
+    submitKey,
+  );
 
   const client = createClient(operator);
   try {

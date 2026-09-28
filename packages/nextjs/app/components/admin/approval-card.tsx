@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { finalizeSubmission } from "@/lib/admin/api";
 import type { FinalizeResultDto, SubmissionDto } from "@/lib/approvals/dto";
 import { expectedEnvelope } from "@/lib/approvals/expected-envelope";
@@ -34,9 +34,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function ApprovalCard({
   submission,
   onFinalized,
+  autoApprove = false,
 }: {
   submission: SubmissionDto;
   onFinalized?: () => void;
+  /** Ask the connected wallet to approve as soon as the schedule checks out (used for the proposer). */
+  autoApprove?: boolean;
 }) {
   const { config, wallet, adminAccountId, approve } = useAdmin();
   const [ledger, setLedger] = useState<LedgerView>({ status: "loading" });
@@ -44,6 +47,7 @@ export function ApprovalCard({
   const [phase, setPhase] = useState<"idle" | "approving" | "finalizing">("idle");
   const [result, setResult] = useState<FinalizeResultDto | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const autoStarted = useRef(false);
 
   // Read the schedule and the topic's submit key from the mirror node, and check the scheduled
   // message against an envelope recomputed from the content shown here: in the browser, not the server.
@@ -120,6 +124,20 @@ export function ApprovalCard({
     await settle(20);
   }
 
+  // The proposer's own approval is the first one: request it once the in-browser check has passed.
+  const readyForAuto =
+    autoApprove &&
+    ledger.status === "ready" &&
+    ledger.check.ok &&
+    progress?.youCanApprove === true &&
+    !progress.alreadySignedByYou &&
+    phase === "idle";
+  useEffect(() => {
+    if (!readyForAuto || autoStarted.current) return;
+    autoStarted.current = true;
+    void Promise.resolve().then(onApprove);
+  });
+
   const executed = result?.status === "executed" ? result : null;
   const closed =
     result && (result.status === "expired" || result.status === "rejected") ? result : null;
@@ -172,7 +190,7 @@ export function ApprovalCard({
         {progress && (
           <span>
             Approvals: <strong>{progress.approvals}</strong> of <strong>{progress.required}</strong>{" "}
-            required
+            required · {progress.authorizedKeys} authorized keys
             {progress.alreadySignedByYou && " · you have approved"}
           </span>
         )}

@@ -200,6 +200,10 @@ admin A, B, …: /admin/approvals → browser checks the schedule vs. content �
      scheduled message,
    - shows the approval count against the on-chain threshold.
 
+   The proposer's own approval counts first. Right after proposing, the console asks the proposer's
+   wallet to approve, once the check above has passed. Another administrator's approval then
+   completes a 2-of-N key.
+
    **Approve** builds a `ScheduleSign` in the browser and sends it to the wallet
    (`hedera_signAndExecuteTransaction`). The wallet shows it, signs it, pays a small fee, and
    submits it.
@@ -251,8 +255,11 @@ enough valid signatures (`INVALID_SIGNATURE`), so the network enforces them, not
 
 Before it creates its first schedule, the server repeats that on-chain check using the admin and
 submit **public** keys. If the topic's keys were ever changed, it refuses to propose and returns
-`SERVER_MISCONFIGURED`. The server's operator account only pays for schedules; it holds no submit
-key.
+`SERVER_MISCONFIGURED`. The server's operator account only pays for schedules. **Its key must not be a submit key.**
+Hedera counts the payer's signature on a `ScheduleCreate` toward the scheduled transaction, so an
+operator that held a submit key would silently give one approval to every proposal. `topic:create`
+and the server both refuse that configuration, so use an operator account that is not an
+administrator's wallet.
 
 To prove enforcement against the live network (this costs a few testnet cents):
 
