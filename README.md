@@ -124,7 +124,7 @@ No statuses, locations, carriers or descriptions go on-chain.
      and every miss gets the same "no parcel" answer. The query is an equality match on the
      `parcel_hash` unique index.
    - Because the ID is not in the URL, reloading the page clears the result and nothing can be bookmarked or shared by link. Search again instead.
-2. An animated **"Verifying live ledger integrity…"** overlay appears while **your browser**
+2. An animated **"Checking records…"** overlay appears while **your browser**
    checks each event. Public mirror nodes allow cross-origin requests, so the check does not
    depend on trusting this app's server. For each event, the browser:
    - rebuilds the canonical bytes from the displayed content and computes SHA-256 fresh
@@ -134,10 +134,10 @@ No statuses, locations, carriers or descriptions go on-chain.
      equal the recomputed hash.
 3. The browser also recomputes the tracking ID from the parcel details.
 4. Each event then shows one of:
-   - **✅ Verified against ledger**, linking to that mirror-node message.
-   - A **security warning** naming the sequence number. Reasons: `content-mismatch`,
-     `wrong-parcel`, `invalid-content`, `not-an-envelope`, `no-anchor`.
-   - **Ledger unreachable**, with a retry button.
+   - a **Verified** badge, linking to that record on HashScan (the public explorer),
+   - a **Changed** badge with a plain-language warning. The internal reason codes are
+     `content-mismatch`, `wrong-parcel`, `invalid-content`, `not-an-envelope` and `no-anchor`.
+   - **Not checked**, with a retry button, when the ledger could not be reached.
 
 Every hash on the page is recomputed; none is read from storage. `POST /api/parcels/lookup` with
 `{ "trackingId": "<id>" }` returns the same stored content as JSON (`Cache-Control: no-store`), so
@@ -338,6 +338,12 @@ and have whole-second precision.
 
 `cargo_events.payer_account_id` is a convenience copy only. It is **not** covered by
 `payloadHash`. The mirror node's transaction record is the authoritative payer.
+
+### UI wording
+
+The interface uses plain cargo language: shipments, updates, tracking ID, shipper, consignee and
+carrier. It avoids ledger terms. Hedera is named once, on the home page, as the source of truth, and
+no emojis are used. Keep new copy consistent with this.
 
 ## Scripts
 

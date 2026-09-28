@@ -96,7 +96,7 @@ export function ApprovalCard({
     for (let i = 0; i < maxPolls; i++) {
       const r = await finalizeSubmission(submission.id);
       if (!r.ok) {
-        setError(r.message);
+        setError("Could not refresh. Try again.");
         break;
       }
       setResult(r.data);
@@ -116,8 +116,8 @@ export function ApprovalCard({
     setPhase("approving");
     try {
       await approve(submission.scheduleId);
-    } catch (e) {
-      setError(`Wallet did not approve: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      setError("Approval was cancelled or failed in your wallet.");
       setPhase("idle");
       return;
     }
@@ -150,6 +150,16 @@ export function ApprovalCard({
     !executed &&
     !closed;
 
+  const status = (() => {
+    if (ledger.status === "loading" || ledger.status === "waiting")
+      return { tone: "text-muted", text: "Checking…" };
+    if (ledger.status === "error")
+      return { tone: "text-danger", text: "This change could not be checked. Try again." };
+    return ledger.check.ok
+      ? { tone: "text-ok", text: "Details match" }
+      : { tone: "text-danger", text: "Do not approve: these details have been changed." };
+  })();
+
   return (
     <article
       className="grid gap-4 rounded-[14px] border border-line bg-surface p-5"
@@ -157,55 +167,28 @@ export function ApprovalCard({
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="m-0 text-lg font-bold">
-          {submission.kind === "register-parcel" ? "Register parcel" : "Record event"}
+          {submission.kind === "register-parcel" ? "New shipment" : "Update"}
         </h3>
         <span className="text-xs text-muted">
-          Proposed by <span className="font-mono">{submission.proposedBy}</span> · expires{" "}
-          {formatUtc(submission.expiresAt)}
+          By {submission.proposedBy} · expires {formatUtc(submission.expiresAt)}
         </span>
       </header>
 
       <SubmissionSummary submission={submission} />
 
-      <div className="grid gap-2 rounded-[10px] bg-surface-2 px-3.5 py-3 text-sm">
-        {ledger.status === "loading" && (
-          <span className="text-muted">Reading the schedule from the mirror node…</span>
-        )}
-        {ledger.status === "waiting" && (
-          <span className="text-muted">Waiting for the mirror node to index the new schedule…</span>
-        )}
-        {ledger.status === "error" && (
-          <span className="text-danger">Could not read the schedule: {ledger.message}</span>
-        )}
-        {ledger.status === "ready" &&
-          (ledger.check.ok ? (
-            <span className="font-semibold text-ok">
-              ✅ The scheduled ledger message matches this content (recomputed in your browser).
-            </span>
-          ) : (
-            <span className="font-semibold text-danger" role="alert">
-              ⚠️ Do not approve: {ledger.check.reason}.
-            </span>
-          ))}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <span
+          className={`font-semibold ${status.tone}`}
+          role={ledger.status === "ready" && !ledger.check.ok ? "alert" : undefined}
+        >
+          {status.text}
+        </span>
         {progress && (
-          <span>
-            Approvals: <strong>{progress.approvals}</strong> of <strong>{progress.required}</strong>{" "}
-            required · {progress.authorizedKeys} authorized keys
-            {progress.alreadySignedByYou && " · you have approved"}
+          <span className="text-muted">
+            {progress.approvals} of {progress.required} approvals
+            {progress.alreadySignedByYou && " · you approved"}
           </span>
         )}
-        <span className="text-xs text-muted">
-          Schedule{" "}
-          <a
-            className="font-mono"
-            href={`${config.mirrorBaseUrl}/api/v1/schedules/${submission.scheduleId}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {submission.scheduleId}
-          </a>{" "}
-          on topic <span className="font-mono">{config.topicId}</span>
-        </span>
       </div>
 
       {executed && (
@@ -213,13 +196,17 @@ export function ApprovalCard({
           className="m-0 rounded-[10px] bg-ok-soft px-3.5 py-3 font-semibold text-ok"
           role="status"
         >
-          ✅ Executed and anchored at HCS sequence #{executed.hcsSequenceNumber}. The public tracker
-          can now verify it.
+          Approved. Customers can now see this.
         </p>
       )}
       {closed && (
-        <p className="m-0 rounded-[10px] bg-danger-soft px-3.5 py-3 text-danger" role="alert">
-          {closed.status === "expired" ? "Expired" : "Rejected"}: {closed.reason}
+        <p
+          className="m-0 rounded-[10px] bg-danger-soft px-3.5 py-3 font-semibold text-danger"
+          role="alert"
+        >
+          {closed.status === "expired"
+            ? "Expired before it was approved."
+            : "Rejected: the details did not match."}
         </p>
       )}
       {error && (
@@ -237,10 +224,10 @@ export function ApprovalCard({
             className="cursor-pointer rounded-[10px] bg-accent px-5 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {phase === "approving"
-              ? "Approve in your wallet…"
+              ? "Confirm in your wallet…"
               : phase === "finalizing"
-                ? "Waiting for consensus…"
-                : "Approve with wallet"}
+                ? "Finishing…"
+                : "Approve"}
           </button>
           <button
             type="button"
@@ -248,15 +235,13 @@ export function ApprovalCard({
             disabled={phase !== "idle" || !adminAccountId}
             className="cursor-pointer rounded-[10px] border border-line bg-surface px-4 py-2.5 font-semibold text-fg disabled:opacity-50"
           >
-            Check status
+            Refresh
           </button>
           {wallet.status !== "connected" && (
-            <span className="text-sm text-muted">Connect a wallet to approve.</span>
+            <span className="text-sm text-muted">Connect your wallet to approve.</span>
           )}
           {progress && wallet.status === "connected" && !progress.youCanApprove && (
-            <span className="text-sm text-warn">
-              Your wallet&apos;s key is not one of the topic&apos;s submit keys.
-            </span>
+            <span className="text-sm text-warn">This wallet can&apos;t approve changes.</span>
           )}
         </div>
       )}

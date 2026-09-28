@@ -1,6 +1,7 @@
 "use client";
 
 import type { TimelineDto } from "@/lib/timeline/dto";
+import type { HederaNetwork } from "@/lib/wallet/hip820";
 import { newestFirst } from "@/lib/timeline/order";
 import { EventCard } from "./event-card";
 import { ParcelSummary } from "./parcel-summary";
@@ -10,10 +11,12 @@ import { VerificationBanner } from "./verification-banner";
 /** Database-first timeline, rendered immediately; ledger verification streams in per event. */
 export function TrackingView({
   timeline,
+  network,
   topicId,
   mirrorBaseUrl,
 }: {
   timeline: TimelineDto;
+  network: HederaNetwork;
   topicId: string;
   mirrorBaseUrl: string;
 }) {
@@ -33,7 +36,6 @@ export function TrackingView({
         counts={counts}
         done={verification.done}
         error={verification.error}
-        topicId={topicId}
         onRetry={verification.retry}
       />
       <ParcelSummary
@@ -46,14 +48,17 @@ export function TrackingView({
           id="timeline-heading"
           className="mt-2 mb-3 flex items-baseline gap-2.5 text-lg font-bold"
         >
-          Shipment timeline{" "}
-          <span className="text-sm font-normal text-muted">
-            {timeline.events.length} events · latest first
-          </span>
+          Updates <span className="text-sm font-normal text-muted">latest first</span>
         </h2>
         <ol className="m-0 grid gap-4 p-0">
           {newestFirst(timeline.events, verification.events).map(({ event, verdict }) => (
-            <EventCard key={event.id} event={event} verdict={verdict} />
+            <EventCard
+              key={event.id}
+              event={event}
+              verdict={verdict}
+              network={network}
+              topicId={topicId}
+            />
           ))}
         </ol>
       </section>

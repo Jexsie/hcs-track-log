@@ -62,7 +62,7 @@ export function Field({
       )}
       {error ? (
         <p id={`${id}-error`} className="m-0 text-sm text-danger">
-          {label} {error}
+          {error}
         </p>
       ) : (
         hint && (

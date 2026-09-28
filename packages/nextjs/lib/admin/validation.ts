@@ -71,6 +71,19 @@ const EVENT_RULES: Record<keyof EventForm, (v: unknown) => unknown> = {
   timestamp: normalizeLocalTimestamp,
 };
 
+/** What admins see: plain language. The shared normalizers above still decide validity. */
+const FRIENDLY: Partial<Record<keyof ParcelForm | keyof EventForm, string>> = {
+  packageCount: "Enter a whole number, e.g. 12",
+  grossMassKg: "Enter a number with up to 2 decimals, e.g. 142.50",
+  volumeCubicMeters: "Enter a number with up to 2 decimals, e.g. 0.85",
+  scacCode: "Use 2–4 letters, e.g. MAEU",
+  timestamp: "Pick a date and time",
+};
+
+export function friendlyMessage(field: keyof ParcelForm | keyof EventForm): string {
+  return FRIENDLY[field] ?? "Check this field";
+}
+
 function validate<F extends object>(
   form: F,
   rules: Record<keyof F, (v: unknown) => unknown>,
@@ -81,7 +94,9 @@ function validate<F extends object>(
       rules[key](form[key]);
     } catch (error) {
       if (!(error instanceof FieldError)) throw error;
-      errors[key] = error.message;
+      const empty = typeof form[key] !== "string" || String(form[key]).trim() === "";
+      const field = key as keyof ParcelForm | keyof EventForm;
+      errors[key] = empty && field !== "timestamp" ? "Required" : friendlyMessage(field);
     }
   }
   return errors;

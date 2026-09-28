@@ -32,11 +32,11 @@ export function ApprovalsList() {
     };
   }, [adminAccountId, reload]);
 
-  if (!sessionChecked) return <p className="m-0 text-muted">Checking your session…</p>;
+  if (!sessionChecked) return <p className="m-0 text-muted">Loading…</p>;
   if (!adminAccountId) {
     return (
       <p className="m-0 rounded-xl border border-line bg-surface p-5 text-muted">
-        Connect your wallet and sign in to see pending approvals.
+        Sign in with your wallet to see approvals.
       </p>
     );
   }
@@ -46,9 +46,9 @@ export function ApprovalsList() {
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">
           {state.status === "ready"
-            ? `${state.submissions.length} awaiting approval`
+            ? `${state.submissions.length} waiting`
             : state.status === "error"
-              ? state.message
+              ? "Could not load approvals"
               : "Loading…"}
         </span>
         <button
@@ -61,7 +61,7 @@ export function ApprovalsList() {
       </div>
       {state.status === "ready" && state.submissions.length === 0 && (
         <p className="m-0 rounded-xl border border-line bg-surface p-5 text-muted">
-          Nothing is waiting for approval.
+          Nothing to approve.
         </p>
       )}
       {state.status === "ready" &&

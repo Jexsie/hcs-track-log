@@ -12,15 +12,15 @@ import {
 } from "@/lib/config/env";
 
 export const metadata: Metadata = {
-  title: "Administrator console — hcs-track-log",
+  title: "Admin — Cargo Tracker",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 
 const NAV = [
-  { href: "/admin/parcels/new", label: "Register parcel" },
-  { href: "/admin/events/new", label: "Record event" },
+  { href: "/admin/parcels/new", label: "New shipment" },
+  { href: "/admin/events/new", label: "Add update" },
   { href: "/admin/approvals", label: "Approvals" },
 ];
 
@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
             href="/admin"
             className="flex items-center gap-2.5 font-bold text-band-fg no-underline"
           >
-            hcs·track-log
+            Cargo Tracker
             <span className="rounded-md bg-accent px-2 py-0.5 text-xs font-bold tracking-wider text-white uppercase">
               Admin
             </span>
@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
             href="/"
             className="ml-auto text-sm text-band-fg/80 no-underline hover:text-band-fg"
           >
-            Public tracker ↗
+            Public tracking
           </Link>
         </div>
       </header>
@@ -81,11 +81,9 @@ export default function AdminLayout({ children }: Readonly<{ children: ReactNode
           </AdminProvider>
         ) : (
           <section className="rounded-xl border-2 border-danger bg-surface p-5" role="alert">
-            <h1 className="mt-0 mb-1 text-xl font-bold">The console is not configured</h1>
+            <h1 className="mt-0 mb-1 text-xl font-bold">Admin is not set up yet</h1>
             <p className="m-0 text-muted">
-              Set <code className="font-mono">HCS_TOPIC_ID</code> (and optionally{" "}
-              <code className="font-mono">MIRROR_NODE_URL</code>) in{" "}
-              <code className="font-mono">.env</code>, then restart the server.
+              Finish the server setup (see the README), then restart it.
             </p>
           </section>
         )}

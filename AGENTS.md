@@ -171,6 +171,7 @@ on-chain anchor.
 | `packages/nextjs/lib/timeline/lookup-client.ts`                    | Browser lookup client shared by the public page and the admin console                                                                         |
 | `packages/nextjs/lib/timeline/format.ts`                           | Deterministic UTC / hash display formatting (identical on server and client)                                                                  |
 | `packages/nextjs/lib/timeline/order.ts`                            | Public timeline display order: latest HCS sequence first, verdicts kept paired                                                                |
+| `packages/nextjs/lib/timeline/explorer.ts`                         | HashScan links for verified records and the topic                                                                                             |
 | `packages/nextjs/lib/server/read-handlers.ts`                      | `loadTimeline` + `POST /api/parcels/lookup` (exact ID in the body, uniform 404, `no-store`)                                                   |
 | `packages/nextjs/app/api/parcels/lookup/route.ts`                  | `POST /api/parcels/lookup`                                                                                                                    |
 | `packages/nextjs/app/components/track-search.tsx`                  | Public search: POSTs the tracking ID and renders the verified timeline in place (no ID in the URL)                                            |

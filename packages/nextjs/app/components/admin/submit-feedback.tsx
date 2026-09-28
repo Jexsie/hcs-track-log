@@ -1,27 +1,25 @@
 import type { ApiFailure } from "@/lib/admin/api";
 
-const HINT: Record<string, string> = {
-  UNAUTHENTICATED: "Your administrator session has expired. Sign in again with your wallet above.",
-  NOT_A_SUBMITTER: "The connected wallet's key is not one of the topic's submit keys.",
-  VALIDATION_ERROR: "Fix the highlighted field and submit again.",
-  PARCEL_NOT_FOUND: "No parcel has exactly this tracking ID.",
-  PARCEL_EXISTS: "This parcel is already registered or is already awaiting approval.",
-  SUBMISSION_FAILED:
-    "Hedera did not accept the schedule. Nothing was proposed; it is safe to retry.",
-  SERVER_MISCONFIGURED:
-    "The server's Hedera configuration is incomplete or the topic's keys do not match it. Nothing was proposed.",
-  LEDGER_UNAVAILABLE: "The Hedera mirror node did not respond. Nothing changed; retry in a moment.",
-  NETWORK_ERROR: "Check your connection and retry.",
+const MESSAGE: Record<string, string> = {
+  UNAUTHENTICATED: "Your session has expired. Sign in again.",
+  NOT_A_SUBMITTER: "This wallet is not allowed to submit changes.",
+  VALIDATION_ERROR: "Check the highlighted fields.",
+  PARCEL_NOT_FOUND: "No shipment found with this tracking ID.",
+  PARCEL_EXISTS: "This shipment already exists or is waiting for approval.",
+  SUBMISSION_FAILED: "Could not submit. Nothing was saved, so you can try again.",
+  SERVER_MISCONFIGURED: "Admin is not set up correctly. Contact whoever runs this service.",
+  LEDGER_UNAVAILABLE: "The service is busy. Try again in a moment.",
+  NETWORK_ERROR: "No connection. Try again.",
 };
 
 export function SubmitError({ failure }: { failure: ApiFailure }) {
   return (
-    <div className="rounded-xl border-2 border-danger bg-danger-soft px-4 py-3" role="alert">
-      <strong className="block text-danger">{failure.message}</strong>
-      <p className="mt-1 mb-0 text-sm text-fg">
-        {HINT[failure.code] ?? `Request failed (${failure.code}).`}
-      </p>
-    </div>
+    <p
+      className="m-0 rounded-xl border border-danger bg-danger-soft px-4 py-3 text-sm font-semibold text-danger"
+      role="alert"
+    >
+      {MESSAGE[failure.code] ?? "Something went wrong. Try again."}
+    </p>
   );
 }
 
@@ -46,7 +44,7 @@ export function SubmitButton({
           aria-hidden
         />
       )}
-      {pending ? "Scheduling on Hedera…" : children}
+      {pending ? "Submitting…" : children}
     </button>
   );
 }
@@ -55,5 +53,5 @@ export const SIGN_IN_FIRST: ApiFailure = {
   ok: false,
   status: 401,
   code: "UNAUTHENTICATED",
-  message: "Sign in with your administrator wallet first.",
+  message: "Sign in with your wallet first.",
 };

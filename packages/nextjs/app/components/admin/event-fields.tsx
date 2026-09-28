@@ -29,7 +29,7 @@ export function EventFields({
   const set = (key: keyof EventForm) => (e: { target: { value: string } }) =>
     onChange({ ...value, [key]: e.target.value });
   return (
-    <FormSection title={title} description="These fields are hashed into this event's payloadHash.">
+    <FormSection title={title}>
       <Field
         name="status"
         label="Status"
@@ -57,7 +57,7 @@ export function EventFields({
       />
       <Field
         name="scacCode"
-        label="SCAC code"
+        label="Carrier code"
         value={value.scacCode}
         onChange={set("scacCode")}
         error={errors.scacCode}
@@ -65,17 +65,15 @@ export function EventFields({
         maxLength={4}
         autoCapitalize="characters"
         inputClassName="uppercase"
-        hint="2–4 letter Standard Carrier Alpha Code"
       />
       <Field
         name="timestamp"
-        label="Event time"
+        label="Time"
         type="datetime-local"
         step={1}
         value={value.timestamp}
         onChange={set("timestamp")}
         error={errors.timestamp}
-        hint="Your local time; recorded on the ledger as UTC, whole seconds."
         className="sm:col-span-2"
         action={
           <button

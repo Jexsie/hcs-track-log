@@ -7,6 +7,7 @@ import {
   type EventForm,
   type ParcelForm,
   fieldForPath,
+  friendlyMessage,
   toEventPayload,
   toParcelPayload,
   validateEventForm,
@@ -47,16 +48,20 @@ describe("validateParcelForm / validateEventForm", () => {
   });
 
   it.each([
-    ["grossMassKg", { grossMassKg: "1.005" }, "at most 2 decimal places"],
-    ["volumeCubicMeters", { volumeCubicMeters: "-1" }, "non-negative decimal"],
-    ["packageCount", { packageCount: "2.5" }, "positive integer"],
-  ] as const)("flags %s with the server's own rule", (field, change, message) => {
-    expect(validateParcelForm({ ...parcel, ...change })[field]).toContain(message);
-  });
+    ["grossMassKg", { grossMassKg: "1.005" }, "up to 2 decimals"],
+    ["volumeCubicMeters", { volumeCubicMeters: "-1" }, "up to 2 decimals"],
+    ["packageCount", { packageCount: "2.5" }, "whole number"],
+  ] as const)(
+    "flags %s with a plain-language message (server rules underneath)",
+    (field, change, message) => {
+      expect(validateParcelForm({ ...parcel, ...change })[field]).toContain(message);
+    },
+  );
 
   it("flags an invalid SCAC code and a missing timestamp", () => {
     const errors = validateEventForm({ ...event, scacCode: "M1", timestamp: "" });
-    expect(errors.scacCode).toContain("2–4 letters");
+    expect(errors.scacCode).toBe("Use 2–4 letters, e.g. MAEU");
+    expect(errors.timestamp).toBe("Pick a date and time");
     expect(errors.timestamp).toBeDefined();
   });
 });
@@ -70,6 +75,22 @@ describe("payload builders", () => {
     const e = toEventPayload(event);
     expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     expect(normalizeCargoEvent(e).carrier.scacCode).toBe("MTNL");
+  });
+});
+
+describe("friendly messages", () => {
+  it("says Required for empty fields and never shows internal wording", () => {
+    const errors = validateParcelForm(EMPTY_PARCEL_FORM);
+    expect(errors.description).toBe("Required");
+    for (const message of Object.values({ ...errors, ...validateEventForm(EMPTY_EVENT_FORM) })) {
+      expect(message).not.toMatch(/must|decimal number|integer|hash|scac/i);
+    }
+  });
+
+  it("gives a field's plain message for a server-side validation error", () => {
+    expect(friendlyMessage("grossMassKg")).toBe(
+      "Enter a number with up to 2 decimals, e.g. 142.50",
+    );
   });
 });
 

@@ -31,20 +31,13 @@ export function WalletPanel() {
     >
       {wallet.status === "unconfigured" && (
         <p className="m-0 text-sm">
-          <strong>Wallet connection is not configured.</strong>{" "}
-          <span className="text-muted">
-            Set <code className="font-mono">NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID</code> (from
-            dashboard.reown.com) and restart the server.
-          </span>
+          <strong>Wallet sign-in is not set up yet.</strong>
         </p>
       )}
 
       {wallet.status === "idle" && (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted">
-            Connect the Hedera wallet whose key is one of the topic&apos;s submit keys. Every
-            submission must be approved in the required number of administrators&apos; wallets.
-          </span>
+          <span className="text-sm text-muted">Connect your wallet to sign in.</span>
           <button type="button" className={`${PRIMARY} ml-auto`} onClick={connect} disabled={busy}>
             Connect wallet
           </button>
@@ -56,17 +49,17 @@ export function WalletPanel() {
       {connectedAs && (
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-full bg-ok-soft px-2.5 py-1 text-xs font-semibold text-ok">
-            Wallet connected
+            Connected
           </span>
           <span className="font-mono text-sm">{connectedAs}</span>
           {signedInHere ? (
             <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-white">
-              Signed in as administrator
+              Signed in
             </span>
           ) : (
             sessionChecked && (
               <button type="button" className={PRIMARY} onClick={signIn} disabled={busy}>
-                {busy ? "Check your wallet…" : "Sign in (sign a message)"}
+                {busy ? "Confirm in your wallet…" : "Sign in"}
               </button>
             )
           )}
@@ -85,8 +78,7 @@ export function WalletPanel() {
 
       {adminAccountId && !signedInHere && connectedAs && (
         <p className="m-0 text-sm text-warn">
-          Your session belongs to {adminAccountId}, not the connected wallet. Sign in again to
-          switch.
+          Signed in as {adminAccountId}. Sign in again to switch to this wallet.
         </p>
       )}
 

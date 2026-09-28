@@ -32,23 +32,20 @@ export function PairingQr({ uri, onCancel }: { uri: string; onCancel: () => void
       <div
         className="size-[180px] rounded-lg bg-white p-2"
         role="img"
-        aria-label="WalletConnect pairing QR code"
+        aria-label="Wallet connection QR code"
         // Generated locally by the qrcode library from the pairing URI; contains no user input.
         dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
       />
       <div className="grid gap-2 text-sm">
-        <strong>Scan with your Hedera wallet</strong>
-        <span className="text-muted">
-          Or copy the pairing link and paste it into your wallet&apos;s &ldquo;Connect dApp&rdquo;
-          screen.
-        </span>
+        <strong>Scan with your wallet app</strong>
+        <span className="text-muted">Or copy the link into your wallet.</span>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={copy}
             className="cursor-pointer rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-fg"
           >
-            {copied ? "Copied" : "Copy pairing link"}
+            {copied ? "Copied" : "Copy link"}
           </button>
           <button
             type="button"

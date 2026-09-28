@@ -8,17 +8,14 @@ export function SampleDataButton({ onFill, disabled }: { onFill: () => void; dis
   const { config } = useAdmin();
   if (!sampleDataAllowed(config.network)) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-line bg-surface-2 px-4 py-2.5">
-      <span className="text-sm text-muted">
-        Trying things out on {config.network}? Fill the form with random sample data.
-      </span>
+    <div className="flex justify-end">
       <button
         type="button"
         onClick={onFill}
         disabled={disabled}
-        className="cursor-pointer rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-fg disabled:opacity-50"
+        className="cursor-pointer rounded-lg border border-dashed border-line bg-surface px-3 py-1.5 text-sm font-semibold text-muted disabled:opacity-50"
       >
-        🎲 Fill sample data
+        Fill with sample data
       </button>
     </div>
   );

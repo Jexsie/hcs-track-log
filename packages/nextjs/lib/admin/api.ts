@@ -113,7 +113,7 @@ export async function fetchParcelSummary(
       ok: false,
       status: 404,
       code: "PARCEL_NOT_FOUND",
-      message: "No parcel has exactly this tracking ID.",
+      message: "No shipment found with this tracking ID.",
     };
   }
   if (result.status === "error")

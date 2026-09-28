@@ -13,6 +13,7 @@ import {
   type EventForm,
   type FormErrors,
   fieldForPath,
+  friendlyMessage,
   toEventPayload,
   validateEventForm,
 } from "@/lib/admin/validation";
@@ -31,25 +32,18 @@ type Lookup =
   | { state: "found"; summary: ParcelSummary }
   | { state: "missing"; message: string };
 
-const HASH_ERROR = "must be exactly 64 lower-case hexadecimal characters";
+const HASH_ERROR = "Enter a valid tracking ID";
 
 function LookupStatus({ lookup }: { lookup: Lookup }) {
-  if (lookup.state === "loading")
-    return <p className="m-0 text-sm text-muted">Looking up parcel…</p>;
+  if (lookup.state === "loading") return <p className="m-0 text-sm text-muted">Looking up…</p>;
   if (lookup.state === "missing")
     return <p className="m-0 text-sm text-danger">{lookup.message}</p>;
   if (lookup.state !== "found") return null;
   const { summary } = lookup;
   return (
     <p className="m-0 rounded-[10px] bg-surface-2 px-3 py-2 text-sm">
-      <strong>{summary.description}</strong> · {summary.eventCount} events
-      {summary.latest && (
-        <>
-          {" "}
-          · latest: {summary.latest.status} at {summary.latest.location} (#
-          {summary.latest.hcsSequenceNumber})
-        </>
-      )}
+      <strong>{summary.description}</strong> · {summary.eventCount} updates
+      {summary.latest && ` · latest: ${summary.latest.status}, ${summary.latest.location}`}
     </p>
   );
 }
@@ -116,7 +110,7 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
     }
     setFailure(result);
     const field = result.path ? fieldForPath(result.path) : null;
-    if (field && field in event) setErrors({ [field]: result.message });
+    if (field && field in event) setErrors({ [field]: friendlyMessage(field) });
   }
 
   function another() {
@@ -131,7 +125,7 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
       <ProposalCreated
         submission={proposal}
         onAnother={another}
-        anotherLabel="Propose another event"
+        anotherLabel="Add another update"
       />
     );
   }
@@ -147,7 +141,7 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
         disabled={pending}
       />
       <fieldset disabled={pending} className="m-0 grid min-w-0 gap-5 border-0 p-0">
-        <FormSection title="Parcel">
+        <FormSection title="Shipment">
           <Field
             name="parcelHash"
             label="Tracking ID"
@@ -155,22 +149,21 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
             onChange={(e) => setRawHash(e.target.value)}
             onBlur={onHashBlur}
             error={hashError}
-            placeholder="64 lower-case hexadecimal characters"
+            placeholder="Enter tracking ID"
             spellCheck={false}
             autoComplete="off"
-            inputClassName="font-mono"
             className="sm:col-span-2"
             hint={<LookupStatus lookup={lookup} />}
           />
         </FormSection>
-        <EventFields title="New event" value={event} errors={errors} onChange={setEvent} />
+        <EventFields title="Update" value={event} errors={errors} onChange={setEvent} />
       </fieldset>
 
       {failure && <SubmitError failure={failure} />}
 
       <div>
         <SubmitButton pending={pending} disabled={!adminAccountId}>
-          Propose event for approval
+          Submit for approval
         </SubmitButton>
       </div>
     </form>

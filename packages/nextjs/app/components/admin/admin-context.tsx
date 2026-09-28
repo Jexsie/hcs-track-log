@@ -70,7 +70,26 @@ export function useAdmin(): AdminContextValue {
   return value;
 }
 
-const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+/** An error whose message is written for admins; anything else is replaced with a plain one. */
+class UiError extends Error {}
+
+function message(error: unknown): string {
+  if (error instanceof UiError) return error.message;
+  const raw = error instanceof Error ? error.message : String(error);
+  return /reject|cancel|denied/i.test(raw)
+    ? "Cancelled in your wallet."
+    : "Something went wrong with your wallet. Try again.";
+}
+
+/** Plain-language sign-in failures (server codes stay internal). */
+const SIGN_IN_ERROR: Record<string, string> = {
+  NOT_A_SUBMITTER: "This wallet is not allowed to approve changes.",
+  BAD_SIGNATURE: "Sign-in failed. Try again.",
+  BAD_CHALLENGE: "Sign-in timed out. Try again.",
+  UNKNOWN_ACCOUNT: "This wallet account was not found yet. Try again in a minute.",
+  LEDGER_UNAVAILABLE: "The service is busy. Try again in a moment.",
+  NETWORK_ERROR: "No connection. Try again.",
+};
 
 export function AdminProvider({ config, children }: { config: AdminConfig; children: ReactNode }) {
   const [wallet, setWallet] = useState<WalletState>(
@@ -86,7 +105,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
   const adopt = useCallback(
     async (s: SessionTypes.Struct) => {
       const accountId = hederaAccountFromSession(s, config.network);
-      if (!accountId) throw new Error(`the wallet did not share a ${config.network} account`);
+      if (!accountId) throw new UiError(`Switch your wallet to ${config.network} and try again.`);
       session.current = s;
       setWallet({ status: "connected", accountId, publicKey: null });
       const publicKey = await fetchAccountKey(config.mirrorBaseUrl, accountId).catch(() => null);
@@ -111,7 +130,9 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
           return existing && !cancelled ? adopt(existing) : undefined;
         })
         .catch(
-          (e: unknown) => !cancelled && setError(`WalletConnect failed to start: ${message(e)}`),
+          () =>
+            !cancelled &&
+            setError("Could not start the wallet connection. Reload the page to try again."),
         );
     }
     return () => {
@@ -133,7 +154,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
 
   const requireWallet = useCallback(() => {
     if (!client.current || !session.current || wallet.status !== "connected")
-      throw new Error("connect a wallet first");
+      throw new UiError("Connect your wallet first.");
     return { c: client.current, s: session.current, accountId: wallet.accountId };
   }, [wallet]);
 
@@ -148,7 +169,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
       clearError: () => setError(null),
       connect: () =>
         run(async () => {
-          if (!config.projectId) throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set");
+          if (!config.projectId) throw new UiError("Wallet sign-in is not set up yet.");
           const c = (client.current ??= await getSignClient(config.projectId));
           const { uri, approval } = await startPairing(c, config.network);
           setWallet({ status: "pairing", uri });
@@ -170,7 +191,8 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
         run(async () => {
           const { c, s, accountId } = requireWallet();
           const challenge = await requestChallenge(accountId);
-          if (!challenge.ok) throw new Error(challenge.message);
+          if (!challenge.ok)
+            throw new UiError(SIGN_IN_ERROR[challenge.code] ?? "Sign-in failed. Try again.");
           const signatureMap = await walletSignMessage(
             c,
             s,
@@ -183,7 +205,8 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
             token: challenge.data.token,
             signatureMap,
           });
-          if (!signedIn.ok) throw new Error(signedIn.message);
+          if (!signedIn.ok)
+            throw new UiError(SIGN_IN_ERROR[signedIn.code] ?? "Sign-in failed. Try again.");
           setAdminAccountId(signedIn.data.accountId);
         }),
       signOut: () =>

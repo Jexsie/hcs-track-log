@@ -1,53 +1,43 @@
+import type { ReactNode } from "react";
 import type { SubmissionDto } from "@/lib/approvals/dto";
-import { formatUtc, shortHash } from "@/lib/timeline/format";
+import { formatUtc } from "@/lib/timeline/format";
 
-function Row({
-  label,
-  children,
-  mono,
-}: {
-  label: string;
-  children: React.ReactNode;
-  mono?: boolean;
-}) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-xs tracking-wide text-muted uppercase">{label}</dt>
-      <dd className={`mt-0.5 text-sm wrap-anywhere ${mono ? "font-mono" : ""}`}>{children}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm wrap-anywhere">{children}</dd>
     </div>
   );
 }
 
-/** Exactly the content being approved: this is what the scheduled envelope commits to. */
+/** Exactly the details being approved. */
 export function SubmissionSummary({ submission }: { submission: SubmissionDto }) {
   const { parcel, event } = submission;
   return (
-    <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-5 gap-y-2.5">
+    <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-x-5 gap-y-2.5">
       {parcel && (
         <>
-          <Row label="Consignment">{parcel.consignment.description}</Row>
+          <Row label="Shipment">{parcel.consignment.description}</Row>
           <Row label="Packages">
             {parcel.consignment.packageCount} × {parcel.consignment.packageType}
           </Row>
-          <Row label="Mass / volume">
+          <Row label="Weight / volume">
             {parcel.consignment.grossMassKg} kg · {parcel.consignment.volumeCubicMeters} m³
           </Row>
-          <Row label="Shipper → consignee">
+          <Row label="From → to">
             {parcel.parties.shipper} → {parcel.parties.consignee}
           </Row>
-          <Row label="Booking ref">{parcel.bookingRef}</Row>
-          <Row label="Created">{formatUtc(parcel.createdAt)}</Row>
+          <Row label="Booking reference">{parcel.bookingRef}</Row>
         </>
       )}
-      <Row label="Event">
+      <Row label="Status">
         {event.status} · {event.location}
       </Row>
-      <Row label="Carrier">
-        {event.carrier.name} ({event.carrier.scacCode})
-      </Row>
-      <Row label="Event time">{formatUtc(event.timestamp)}</Row>
-      <Row label="Tracking ID" mono>
-        <span title={submission.parcelHash}>{shortHash(submission.parcelHash)}</span>
+      <Row label="Carrier">{event.carrier.name}</Row>
+      <Row label="Time">{formatUtc(event.timestamp)}</Row>
+      <Row label="Tracking ID">
+        <span className="font-mono text-xs">{submission.parcelHash}</span>
       </Row>
     </dl>
   );

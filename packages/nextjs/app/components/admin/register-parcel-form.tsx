@@ -10,6 +10,7 @@ import {
   type FormErrors,
   type ParcelForm,
   fieldForPath,
+  friendlyMessage,
   toEventPayload,
   toParcelPayload,
   validateEventForm,
@@ -66,8 +67,8 @@ export function RegisterParcelForm() {
     }
     setFailure(result);
     const field = result.path ? fieldForPath(result.path) : null;
-    if (field && field in parcel) setParcelErrors({ [field]: result.message });
-    else if (field) setEventErrors({ [field]: result.message });
+    if (field && field in parcel) setParcelErrors({ [field]: friendlyMessage(field) });
+    else if (field) setEventErrors({ [field]: friendlyMessage(field) });
   }
 
   function fillSample() {
@@ -92,7 +93,7 @@ export function RegisterParcelForm() {
       <ProposalCreated
         submission={proposal}
         onAnother={reset}
-        anotherLabel="Propose another parcel"
+        anotherLabel="New shipment"
         onRecordNext={() => setNextEventFor(proposal.parcelHash)}
       />
     );
@@ -102,10 +103,7 @@ export function RegisterParcelForm() {
     <form onSubmit={onSubmit} noValidate className="grid gap-5">
       <SampleDataButton onFill={fillSample} disabled={pending} />
       <fieldset disabled={pending} className="m-0 grid min-w-0 gap-5 border-0 p-0">
-        <FormSection
-          title="Consignment"
-          description="Immutable. Together with the parties and booking ref, these form the tracking ID."
-        >
+        <FormSection title="Shipment">
           <Field
             name="description"
             label="Description"
@@ -135,14 +133,13 @@ export function RegisterParcelForm() {
           />
           <Field
             name="grossMassKg"
-            label="Gross mass"
+            label="Weight"
             inputMode="decimal"
             suffix="kg"
             value={parcel.grossMassKg}
             onChange={set("grossMassKg")}
             error={parcelErrors.grossMassKg}
             placeholder="142.50"
-            hint="Up to 2 decimal places"
           />
           <Field
             name="volumeCubicMeters"
@@ -153,11 +150,10 @@ export function RegisterParcelForm() {
             onChange={set("volumeCubicMeters")}
             error={parcelErrors.volumeCubicMeters}
             placeholder="0.85"
-            hint="Up to 2 decimal places"
           />
         </FormSection>
 
-        <FormSection title="Parties & booking">
+        <FormSection title="Sender and receiver">
           <Field
             name="shipper"
             label="Shipper"
@@ -181,24 +177,19 @@ export function RegisterParcelForm() {
             onChange={set("bookingRef")}
             error={parcelErrors.bookingRef}
             placeholder="BK-2026-000184"
-            hint="Makes identical shipments get different tracking IDs."
             className="sm:col-span-2"
           />
         </FormSection>
 
-        <EventFields title="First event" value={event} errors={eventErrors} onChange={setEvent} />
+        <EventFields title="First update" value={event} errors={eventErrors} onChange={setEvent} />
       </fieldset>
 
       {failure && <SubmitError failure={failure} />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SubmitButton pending={pending} disabled={!adminAccountId}>
-          Propose registration for approval
+          Submit for approval
         </SubmitButton>
-        <p className="m-0 text-sm text-muted">
-          Only <code className="font-mono">{"{ v, parcelHash, payloadHash }"}</code> goes on-chain,
-          and only after enough administrators approve it in their wallets.
-        </p>
       </div>
     </form>
   );

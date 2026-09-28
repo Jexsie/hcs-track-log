@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "hcs-track-log — Cargo & Package Tracker",
-  description:
-    "Track a parcel and verify every shipment event against the Hedera Consensus Service.",
+  title: "Track your shipment",
+  description: "Follow your cargo and check every update against its original record.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
