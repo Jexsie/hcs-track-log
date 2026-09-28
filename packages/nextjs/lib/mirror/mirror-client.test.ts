@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FAKE_MIRROR, FAKE_TOPIC, FakeLedger } from "@/test/fake-ledger";
-import { MirrorNotFoundError, MirrorRequestError, createMirrorClient } from "./mirror-client";
+import { MirrorNotFoundError, MirrorRequestError } from "./http";
+import { createMirrorClient } from "./mirror-client";
 
 const encode = (s: string) => new TextEncoder().encode(s);
 
@@ -71,6 +72,23 @@ describe("getMessage", () => {
   it("builds the public message URL (trailing slash tolerated)", () => {
     const mirror = createMirrorClient({ baseUrl: `${FAKE_MIRROR}/`, topicId: FAKE_TOPIC });
     expect(mirror.messageUrl(7n)).toBe(`${FAKE_MIRROR}/api/v1/topics/${FAKE_TOPIC}/messages/7`);
+  });
+});
+
+describe("getMessageAt", () => {
+  it("finds the message with an exact consensus timestamp", async () => {
+    const ledger = ledgerWith(3);
+    const mirror = createMirrorClient({
+      baseUrl: FAKE_MIRROR,
+      topicId: FAKE_TOPIC,
+      fetch: ledger.fetch,
+    });
+    const at = ledger.entries[1]?.consensusTimestamp ?? "";
+    expect((await mirror.getMessageAt(at))?.sequenceNumber).toBe(2n);
+    expect(ledger.requests.at(-1)).toBe(
+      `/api/v1/topics/${FAKE_TOPIC}/messages?timestamp=eq:${at}&limit=1`,
+    );
+    expect(await mirror.getMessageAt("1.000000001")).toBeNull();
   });
 });
 

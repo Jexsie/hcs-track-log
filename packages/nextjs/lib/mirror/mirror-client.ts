@@ -1,3 +1,5 @@
+import { MirrorRequestError, decodeBase64, defaultFetch, getMirrorJson } from "./http";
+
 /**
  * Minimal Hedera mirror node client for topic messages. Runs unchanged in Node and the browser
  * (public mirror nodes send `Access-Control-Allow-Origin: *`).
@@ -13,22 +15,10 @@ export interface MirrorMessage {
   message: Uint8Array;
 }
 
-export class MirrorNotFoundError extends Error {
-  constructor(readonly sequenceNumber: bigint) {
-    super(`no message at sequence ${sequenceNumber}`);
-    this.name = "MirrorNotFoundError";
-  }
-}
-
-export class MirrorRequestError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = "MirrorRequestError";
-  }
-}
-
 export interface MirrorClient {
   getMessage(sequenceNumber: bigint): Promise<MirrorMessage>;
+  /** The message with exactly this consensus timestamp ("seconds.nanos"), or null. */
+  getMessageAt(consensusTimestamp: string): Promise<MirrorMessage | null>;
   listMessages(options?: { limit?: number }): AsyncGenerator<MirrorMessage>;
   messageUrl(sequenceNumber: bigint): string;
 }
@@ -37,10 +27,6 @@ export interface MirrorClientOptions {
   baseUrl: string;
   topicId: string;
   fetch?: typeof fetch;
-}
-
-function decodeBase64(value: string): Uint8Array {
-  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 }
 
 function parseMessage(body: unknown, topicId: string): MirrorMessage {
@@ -55,12 +41,7 @@ function parseMessage(body: unknown, topicId: string): MirrorMessage {
   if (m.topic_id !== topicId) {
     throw new MirrorRequestError(`mirror node returned a message for topic ${String(m.topic_id)}`);
   }
-  let message: Uint8Array;
-  try {
-    message = decodeBase64(m.message as string);
-  } catch (cause) {
-    throw new MirrorRequestError("mirror node message is not valid base64", { cause });
-  }
+  const message = decodeBase64(m.message as string);
   return {
     topicId,
     sequenceNumber: BigInt(m.sequence_number as number),
@@ -69,9 +50,6 @@ function parseMessage(body: unknown, topicId: string): MirrorMessage {
     message,
   };
 }
-
-// Wrapped rather than referenced: an unbound `window.fetch` throws "Illegal invocation" in browsers.
-const defaultFetch: typeof fetch = (input, init) => globalThis.fetch(input, init);
 
 export function createMirrorClient({
   baseUrl,
@@ -82,37 +60,35 @@ export function createMirrorClient({
   const base = baseUrl.replace(/\/+$/, "");
   const topicPath = `/api/v1/topics/${encodeURIComponent(topicId)}/messages`;
 
-  async function getJson(url: string, sequenceNumber?: bigint): Promise<unknown> {
-    let response: Response;
-    try {
-      response = await fetchImpl(url, { headers: { accept: "application/json" } });
-    } catch (cause) {
-      throw new MirrorRequestError("mirror node is unreachable", { cause });
-    }
-    if (response.status === 404 && sequenceNumber !== undefined)
-      throw new MirrorNotFoundError(sequenceNumber);
-    if (!response.ok) throw new MirrorRequestError(`mirror node responded ${response.status}`);
-    try {
-      return await response.json();
-    } catch (cause) {
-      throw new MirrorRequestError("mirror node returned invalid JSON", { cause });
-    }
-  }
-
   return {
     messageUrl: (sequenceNumber) => `${base}${topicPath}/${sequenceNumber}`,
 
     async getMessage(sequenceNumber) {
-      return parseMessage(
-        await getJson(`${base}${topicPath}/${sequenceNumber}`, sequenceNumber),
-        topicId,
-      );
+      const url = `${base}${topicPath}/${sequenceNumber}`;
+      const body = await getMirrorJson(url, fetchImpl, `message at sequence ${sequenceNumber}`);
+      return parseMessage(body, topicId);
+    },
+
+    async getMessageAt(consensusTimestamp) {
+      if (!/^\d+\.\d{1,9}$/.test(consensusTimestamp)) {
+        throw new MirrorRequestError("invalid consensus timestamp");
+      }
+      const url = `${base}${topicPath}?timestamp=eq:${consensusTimestamp}&limit=1`;
+      const page = (await getMirrorJson(url, fetchImpl)) as { messages?: unknown };
+      if (!Array.isArray(page.messages)) {
+        throw new MirrorRequestError("mirror node returned an unexpected page");
+      }
+      const [first] = page.messages as unknown[];
+      return first === undefined ? null : parseMessage(first, topicId);
     },
 
     async *listMessages({ limit = 100 } = {}) {
       let next: string | null = `${base}${topicPath}?limit=${limit}&order=asc`;
       while (next) {
-        const page = (await getJson(next)) as { messages?: unknown; links?: { next?: unknown } };
+        const page = (await getMirrorJson(next, fetchImpl)) as {
+          messages?: unknown;
+          links?: { next?: unknown };
+        };
         if (!Array.isArray(page.messages))
           throw new MirrorRequestError("mirror node returned an unexpected page");
         for (const raw of page.messages) yield parseMessage(raw, topicId);

@@ -38,7 +38,7 @@ export class FakeLedger implements EnvelopeSubmitter {
   append(text: string): void {
     this.entries.push({
       message: new TextEncoder().encode(text),
-      consensusTimestamp: "1758809999.000000001",
+      consensusTimestamp: `1758809${String(this.entries.length).padStart(3, "0")}.000000001`,
       payer: "0.0.666",
     });
   }
@@ -72,6 +72,16 @@ export class FakeLedger implements EnvelopeSubmitter {
       return entry
         ? Response.json(this.json(seq, entry))
         : Response.json({ _status: { messages: [{ message: "Not found" }] } }, { status: 404 });
+    }
+
+    const at = url.searchParams.get("timestamp")?.replace("eq:", "");
+    if (at !== undefined) {
+      const index = this.entries.findIndex((e) => e.consensusTimestamp === at);
+      const hit = this.entries[index];
+      return Response.json({
+        messages: hit ? [this.json(index + 1, hit)] : [],
+        links: { next: null },
+      });
     }
 
     const after = Number(url.searchParams.get("sequencenumber")?.replace("gt:", "") ?? 0);

@@ -1,7 +1,8 @@
 import { ValidationError } from "@/lib/canonical/errors";
 import { EnvelopeError, parseEnvelope } from "@/lib/envelope/envelope";
 import { computePayloadHash } from "@/lib/hashing/payload-hash";
-import { type MirrorClient, MirrorNotFoundError } from "@/lib/mirror/mirror-client";
+import { MirrorNotFoundError } from "@/lib/mirror/http";
+import type { MirrorClient } from "@/lib/mirror/mirror-client";
 import type { EventVerdict } from "./verdicts";
 
 export interface EventToVerify {
