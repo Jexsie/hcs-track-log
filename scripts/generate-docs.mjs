@@ -1,7 +1,8 @@
 // npm run docs:generate
 //
-// Regenerates the README's AUTO-GENERATED tables from their sources of truth:
-//   scripts ← package.json, env ← .env.example, routes ← packages/nextjs/app/api/**/route.ts
+// Regenerates the AUTO-GENERATED tables from their sources of truth:
+//   README.md                  scripts ← package.json, env ← .env.example
+//   packages/nextjs/README.md  routes  ← packages/nextjs/app/api/**/route.ts
 // Fails if a script, variable or route has no description below, so the docs cannot silently drift.
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -26,7 +27,7 @@ const SCRIPT_DESCRIPTIONS = {
   verify:
     "Recompute every cached update and compare it with the ledger (`-- --topic <id> [--parcel <id>] [--skip-scan]`)",
   "docs:generate":
-    "Regenerate these README tables from `package.json`, `.env.example` and the API routes",
+    "Regenerate the README tables from `package.json`, `.env.example` and the API routes",
 };
 
 // [required, used by, default] per the readers in packages/nextjs/lib/config/env.ts
@@ -128,7 +129,7 @@ for (const file of walk(apiDir)
   if (!ROUTE_ACCESS[path])
     problems.push(`classify access for route "${path}" in scripts/generate-docs.mjs`);
   routes.push(
-    `| \`${path}\` | ${methods.join(" ")} | ${ROUTE_ACCESS[path] ?? "?"} | \`${relative(ROOT, file)}\` |`,
+    `| \`${path}\` | ${methods.join(" ")} | ${ROUTE_ACCESS[path] ?? "?"} | \`${relative(join(ROOT, "packages/nextjs"), file)}\` |`,
   );
 }
 
@@ -137,20 +138,26 @@ if (problems.length) {
   process.exit(1);
 }
 
+const TARGETS = [
+  { file: "README.md", blocks: { scripts, env } },
+  { file: "packages/nextjs/README.md", blocks: { routes } },
+];
 const SOURCES = { scripts: "package.json", env: ".env.example", routes: "app/api/**/route.ts" };
-let readme = read("README.md");
-for (const [name, rows] of Object.entries({ scripts, env, routes })) {
-  const pattern = new RegExp(
-    `<!-- AUTO-GENERATED:${name} [\\s\\S]*?<!-- /AUTO-GENERATED:${name} -->`,
-  );
-  if (!pattern.test(readme)) {
-    console.error(`❌ README.md has no AUTO-GENERATED:${name} markers`);
-    process.exit(1);
+for (const { file, blocks } of TARGETS) {
+  let readme = read(file);
+  for (const [name, rows] of Object.entries(blocks)) {
+    const pattern = new RegExp(
+      `<!-- AUTO-GENERATED:${name} [\\s\\S]*?<!-- /AUTO-GENERATED:${name} -->`,
+    );
+    if (!pattern.test(readme)) {
+      console.error(`❌ ${file} has no AUTO-GENERATED:${name} markers`);
+      process.exit(1);
+    }
+    const block = `<!-- AUTO-GENERATED:${name} (from ${SOURCES[name]}; do not edit by hand) -->\n\n${rows.join("\n")}\n\n<!-- /AUTO-GENERATED:${name} -->`;
+    readme = readme.replace(pattern, () => block);
   }
-  const block = `<!-- AUTO-GENERATED:${name} (from ${SOURCES[name]}; do not edit by hand) -->\n\n${rows.join("\n")}\n\n<!-- /AUTO-GENERATED:${name} -->`;
-  readme = readme.replace(pattern, () => block);
+  writeFileSync(join(ROOT, file), readme);
 }
-writeFileSync(join(ROOT, "README.md"), readme);
 console.log(
   `✅ README tables: ${scripts.length - 2} scripts · ${env.length - 2} env vars · ${routes.length - 2} routes`,
 );

@@ -1,6 +1,6 @@
 {
   "name": "hcs-track-log",
-  "description": "Cargo & package tracker on Hedera: shipment events are notarized as blind SHA-256 commitments on a multi-sig HCS topic, cached in Postgres, and verified by recomputing each hash from content.",
+  "description": "Template for tamper-evident records on Hedera HCS: blind SHA-256 commitments on a multi-sig topic, Postgres as a read cache, and verification by recomputing each hash from content. Ships with a cargo-tracking demo.",
   "version": "0.1.0",
   "create-scaffold-hbar": {
     "capabilities": {
@@ -148,7 +148,7 @@
             },
             {
               "label": "Read the architecture and trust model",
-              "text": "See README.md and AGENTS.md."
+              "text": "See README.md (the template), packages/nextjs/README.md (the demo) and AGENTS.md."
             }
           ]
         }
