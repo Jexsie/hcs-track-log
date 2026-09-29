@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { finalizeSubmission } from "@/lib/admin/api";
 import type { FinalizeResultDto, SubmissionDto } from "@/lib/approvals/dto";
 import { expectedEnvelope } from "@/lib/approvals/expected-envelope";
@@ -48,6 +48,15 @@ export function ApprovalCard({
   const [result, setResult] = useState<FinalizeResultDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const autoStarted = useRef(false);
+  const autoFinalized = useRef(false);
+  // Polling outlives a click; stop it (and its state updates) once the card unmounts.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // Read the schedule and the topic's submit key from the mirror node, and check the scheduled
   // message against an envelope recomputed from the content shown here: in the browser, not the server.
@@ -95,6 +104,7 @@ export function ApprovalCard({
     setPhase("finalizing");
     for (let i = 0; i < maxPolls; i++) {
       const r = await finalizeSubmission(submission.id);
+      if (!mounted.current) return;
       if (!r.ok) {
         setError("Could not refresh. Try again.");
         break;
@@ -106,6 +116,7 @@ export function ApprovalCard({
       }
       if (!r.data.awaitingMirror && i >= 3) break; // still waiting on other administrators
       await sleep(POLL_MS);
+      if (!mounted.current) return;
     }
     setPhase("idle");
     setReload((n) => n + 1);
@@ -117,10 +128,12 @@ export function ApprovalCard({
     try {
       await approve(submission.scheduleId);
     } catch {
+      if (!mounted.current) return;
       setError("Approval was cancelled or failed in your wallet.");
       setPhase("idle");
       return;
     }
+    if (!mounted.current) return;
     await settle(20);
   }
 
@@ -132,11 +145,30 @@ export function ApprovalCard({
     progress?.youCanApprove === true &&
     !progress.alreadySignedByYou &&
     phase === "idle";
+  const startAutoApprove = useEffectEvent(() => {
+    void Promise.resolve().then(onApprove);
+  });
   useEffect(() => {
     if (!readyForAuto || autoStarted.current) return;
     autoStarted.current = true;
-    void Promise.resolve().then(onApprove);
+    startAutoApprove();
+  }, [readyForAuto]);
+
+  // Finalizing is what caches an executed change for the tracker, and it runs only from this card.
+  // If the network already executed it (the approver left before polling finished), finish it now.
+  const readyToFinalize =
+    ledger.status === "ready" &&
+    ledger.schedule.executedTimestamp !== null &&
+    result === null &&
+    phase === "idle";
+  const startFinalize = useEffectEvent(() => {
+    void Promise.resolve().then(() => settle(20));
   });
+  useEffect(() => {
+    if (!readyToFinalize || autoFinalized.current) return;
+    autoFinalized.current = true;
+    startFinalize();
+  }, [readyToFinalize]);
 
   const executed = result?.status === "executed" ? result : null;
   const closed =

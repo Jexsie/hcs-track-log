@@ -5,16 +5,23 @@ import type { RecordedEvent, TrackingStore } from "@/lib/tracking/ports";
 /** Anything that can run a query: the pool, or a client inside a transaction. */
 export type Queryable = Pick<pg.PoolClient, "query">;
 
+/**
+ * `ifAbsent` skips the insert when the parcel is already cached. That is safe only because
+ * parcel_hash is the SHA-256 of the parcel content: an existing row for this hash was written from
+ * the same content.
+ */
 export async function insertParcelRow(
   db: Queryable,
   parcelHash: string,
   parcel: Parcel,
+  { ifAbsent = false }: { ifAbsent?: boolean } = {},
 ): Promise<void> {
   await db.query(
     `INSERT INTO parcels
        (parcel_hash, description, package_count, package_type, gross_mass_kg,
         volume_cubic_meters, shipper, consignee, booking_ref, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ${ifAbsent ? "ON CONFLICT (parcel_hash) DO NOTHING" : ""}`,
     [
       parcelHash,
       parcel.consignment.description,

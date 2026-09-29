@@ -17,6 +17,7 @@ import { verifyTimeline } from "@/lib/verify/verify-timeline";
 import { createTestPool, truncateAll } from "@/test/db/database";
 import { FAKE_MIRROR, FAKE_TOPIC, FakeLedger } from "@/test/fake-ledger";
 import { referenceEvent, referenceParcel } from "@/test/fixtures/records";
+import { expectedEnvelope } from "./expected-envelope";
 import { finalizeSubmission } from "./finalize";
 import { proposeEvent, proposeRegistration } from "./propose";
 
@@ -246,5 +247,61 @@ describe("proposal guards (nothing is scheduled)", () => {
     await ledger.approve(a.scheduleId, bob ?? "");
     await finalizeSubmission(a.id, finalizeDeps());
     expect((await pending.listOpen()).map((s) => s.id)).toEqual([b.id]);
+  });
+});
+
+describe("duplicate registrations of one parcel", () => {
+  const now = () => new Date("2026-09-28T10:00:00Z");
+  const register = () =>
+    proposeRegistration(
+      { parcel: parcelForm, firstEvent: referenceEvent },
+      { ...proposeDeps(), now },
+    );
+
+  // The application check normally catches this race; the next test guards the database index.
+  it("rejects the second of two concurrent registrations", async () => {
+    const results = await Promise.allSettled([register(), register()]);
+
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const [failure] = results.filter((r) => r.status === "rejected");
+    expect(failure?.reason).toBeInstanceOf(ParcelExistsError);
+    expect(await count("pending_submissions")).toBe(1);
+  });
+
+  it("refuses a second open registration in the database, even past the application check", async () => {
+    const first = await register();
+    const { id: _id, scheduleId: _scheduleId, ...content } = first;
+
+    await expect(
+      pending.insert({ ...content, id: crypto.randomUUID(), scheduleId: "0.0.999999" }),
+    ).rejects.toThrow(ParcelExistsError);
+  });
+
+  it("still caches the event when another registration of the parcel was finalized first", async () => {
+    const first = await register();
+    await ledger.approve(first.scheduleId, alice ?? "");
+    await ledger.approve(first.scheduleId, bob ?? "");
+    await finalizeSubmission(first.id, finalizeDeps());
+
+    // A second approved registration of the same parcel, e.g. one staged before the index existed.
+    const message = await expectedEnvelope(first);
+    if (!message) throw new Error("expected an envelope");
+    const scheduled = await ledger.schedule(message, "second registration");
+    const { id: _id, scheduleId: _scheduleId, expiresAt: _expiresAt, ...content } = first;
+    const second = await pending.insert({
+      ...content,
+      id: crypto.randomUUID(),
+      scheduleId: scheduled.scheduleId,
+      expiresAt: scheduled.expiresAt,
+    });
+    await ledger.approve(second.scheduleId, alice ?? "");
+    await ledger.approve(second.scheduleId, bob ?? "");
+
+    expect(await finalizeSubmission(second.id, finalizeDeps())).toMatchObject({
+      status: "executed",
+      hcsSequenceNumber: 2n,
+    });
+    expect(await count("parcels")).toBe(1);
+    expect(await count("cargo_events")).toBe(2);
   });
 });

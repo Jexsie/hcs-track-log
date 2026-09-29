@@ -8,6 +8,7 @@ import type {
   SubmissionKind,
   SubmissionStatus,
 } from "@/lib/approvals/ports";
+import { ParcelExistsError } from "@/lib/tracking/errors";
 import type { RecordedEvent } from "@/lib/tracking/ports";
 import { inTransaction, insertEventRow, insertParcelRow } from "./tracking-store";
 
@@ -25,6 +26,14 @@ interface Row {
   status_reason: string | null;
   hcs_sequence_number: string | null;
 }
+
+/** Unique index: at most one registration per parcel awaiting approval. */
+const OPEN_REGISTRATION_INDEX = "pending_submissions_open_registration_idx";
+
+const isUniqueViolation = (error: unknown, constraint: string) =>
+  error instanceof Error &&
+  (error as { code?: unknown }).code === "23505" &&
+  (error as { constraint?: unknown }).constraint === constraint;
 
 const COLUMNS = `id, kind, parcel_hash, parcel_content, event_content, schedule_id, expires_at,
   proposed_by, proposed_at, status, status_reason, hcs_sequence_number`;
@@ -49,22 +58,30 @@ export class PendingSubmissionStore implements PendingStore {
   constructor(private readonly pool: pg.Pool) {}
 
   async insert(s: NewSubmission): Promise<PendingSubmission> {
-    const { rows } = await this.pool.query<Row>(
-      `INSERT INTO pending_submissions
-         (id, kind, parcel_hash, parcel_content, event_content, schedule_id, expires_at, proposed_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING ${COLUMNS}`,
-      [
-        s.id,
-        s.kind,
-        s.parcelHash,
-        s.parcel === null ? null : JSON.stringify(s.parcel),
-        JSON.stringify(s.event),
-        s.scheduleId,
-        s.expiresAt,
-        s.proposedBy,
-      ],
-    );
+    let rows: Row[];
+    try {
+      ({ rows } = await this.pool.query<Row>(
+        `INSERT INTO pending_submissions
+           (id, kind, parcel_hash, parcel_content, event_content, schedule_id, expires_at, proposed_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING ${COLUMNS}`,
+        [
+          s.id,
+          s.kind,
+          s.parcelHash,
+          s.parcel === null ? null : JSON.stringify(s.parcel),
+          JSON.stringify(s.event),
+          s.scheduleId,
+          s.expiresAt,
+          s.proposedBy,
+        ],
+      ));
+    } catch (error) {
+      // A concurrent request staged the same registration first.
+      if (isUniqueViolation(error, OPEN_REGISTRATION_INDEX))
+        throw new ParcelExistsError(s.parcelHash);
+      throw error;
+    }
     const [row] = rows;
     if (!row) throw new Error("insert returned no row");
     return toSubmission(row);
@@ -105,7 +122,9 @@ export class PendingSubmissionStore implements PendingStore {
       );
       if (rowCount !== 1) return; // finalized concurrently by another request
       if (submission.kind === "register-parcel" && submission.parcel) {
-        await insertParcelRow(db, submission.parcelHash, submission.parcel);
+        // The parcel can already be cached if another registration of it executed first. Its event
+        // is still anchored on the ledger, so cache the event rather than failing every finalize.
+        await insertParcelRow(db, submission.parcelHash, submission.parcel, { ifAbsent: true });
       }
       await insertEventRow(db, recorded);
     });

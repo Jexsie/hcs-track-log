@@ -90,3 +90,17 @@ export async function verifyTopic({
   }
   return { parcels, uncached, foreign, totals };
 }
+
+/** `npm run verify` exit codes. */
+export const EXIT = { verified: 0, tampered: 1, incomplete: 2, missingFromCache: 3 } as const;
+
+/**
+ * Changed content outranks everything. Ledger envelopes with no cached row come next: a row deleted
+ * from Postgres looks exactly like this, as does an approved change that has not been finalized yet,
+ * so it must not pass as "verified". An unreachable mirror node only makes the run incomplete.
+ */
+export function verifyExitCode({ totals, uncached }: Pick<TopicReport, "totals" | "uncached">) {
+  if (totals.tampered || totals.tamperedParcels) return EXIT.tampered;
+  if (uncached.length) return EXIT.missingFromCache;
+  return totals.unavailable ? EXIT.incomplete : EXIT.verified;
+}

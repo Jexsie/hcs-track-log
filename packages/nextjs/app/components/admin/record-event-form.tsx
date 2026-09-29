@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
   type ApiFailure,
   type ParcelSummary,
@@ -64,22 +64,35 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [proposal, setProposal] = useState<SubmissionDto | null>(null);
 
+  // Only the latest lookup may set the summary: an older, slower response must not show another parcel.
+  const latestLookup = useRef(0);
+
   const look = useCallback(async (hash: string) => {
+    const request = ++latestLookup.current;
     setLookup({ state: "loading" });
-    setLookup(toLookup(await fetchParcelSummary(hash)));
+    const result = await fetchParcelSummary(hash);
+    if (request === latestLookup.current) setLookup(toLookup(result));
   }, []);
 
   useEffect(() => {
     const hash = parseTrackingId(initialParcelHash);
     if (!hash) return;
     let cancelled = false;
+    const request = ++latestLookup.current;
     fetchParcelSummary(hash).then((result) => {
-      if (!cancelled) setLookup(toLookup(result));
+      if (!cancelled && request === latestLookup.current) setLookup(toLookup(result));
     });
     return () => {
       cancelled = true;
     };
   }, [initialParcelHash]);
+
+  function onHashChange(value: string) {
+    setRawHash(value);
+    // The summary on screen belongs to the previous ID: drop it, and ignore its pending lookup.
+    latestLookup.current++;
+    setLookup({ state: "idle" });
+  }
 
   function onHashBlur() {
     const hash = parseTrackingId(rawHash);
@@ -146,7 +159,7 @@ export function RecordEventForm({ initialParcelHash }: { initialParcelHash: stri
             name="parcelHash"
             label="Tracking ID"
             value={rawHash}
-            onChange={(e) => setRawHash(e.target.value)}
+            onChange={(e) => onHashChange(e.target.value)}
             onBlur={onHashBlur}
             error={hashError}
             placeholder="Enter tracking ID"

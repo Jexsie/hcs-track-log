@@ -87,7 +87,7 @@ No statuses, locations, carriers or descriptions go on-chain.
    `no-anchor`.
 
 The browser checks only the updates Postgres returns. An update deleted from the database is caught
-by `npm run verify`, which scans the whole topic and reports anchors with no cached row.
+by `npm run verify`, which scans the whole topic and fails (exit `3`) on anchors with no cached row.
 
 ### From the command line
 
@@ -97,8 +97,16 @@ npm run verify -- --parcel <trackingId>          # one parcel
 npm run verify -- --topic 0.0.12345 --skip-scan  # skip paging through the whole topic
 ```
 
-`--topic` defaults to `HCS_TOPIC_ID`. Exit codes: `0` all verified, `1` tampering found, `2`
-incomplete (mirror node unreachable).
+`--topic` defaults to `HCS_TOPIC_ID`. Exit codes:
+
+| Code | Meaning                                                                                                   |
+| ---- | --------------------------------------------------------------------------------------------------------- |
+| `0`  | Everything verified, and every envelope on the topic is in Postgres                                       |
+| `1`  | Tampering: stored content no longer matches its anchor                                                    |
+| `2`  | Incomplete: the mirror node was unreachable                                                               |
+| `3`  | Envelopes on the ledger are missing from Postgres: a deleted row, or an approved change not finalized yet |
+
+`--parcel` and `--skip-scan` skip the topic scan, so they can't return `3`.
 
 ## Staff portal: wallet approvals
 

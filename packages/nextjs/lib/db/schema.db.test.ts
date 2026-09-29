@@ -77,10 +77,48 @@ describe("schema", () => {
   });
 
   it("migrations roll back and re-apply cleanly", async () => {
+    const index = async () =>
+      (
+        await pool.query<{ t: string | null }>(
+          `SELECT to_regclass('public.pending_submissions_open_registration_idx')::text AS t`,
+        )
+      ).rows[0]?.t;
     await migrate(TEST_DATABASE_URL, "down", () => {});
-    const { rows } = await pool.query(`SELECT to_regclass('public.pending_submissions') AS t`);
-    expect(rows[0]).toEqual({ t: null });
+    expect(await index()).toBeNull();
     await migrate(TEST_DATABASE_URL, "up", () => {});
+    expect(await index()).toBe("pending_submissions_open_registration_idx");
     expect(Object.keys(await columns("parcels"))).toContain("parcel_hash");
+  });
+
+  it("the one-open-registration migration closes existing duplicates, keeping the earliest", async () => {
+    await pool.query("TRUNCATE pending_submissions"); // other test files leave rows behind
+    await migrate(TEST_DATABASE_URL, "down", () => {});
+    try {
+      const stage = (id: string, scheduleId: string, proposedAt: string) =>
+        pool.query(
+          `INSERT INTO pending_submissions
+             (id, kind, parcel_hash, parcel_content, event_content, schedule_id, expires_at,
+              proposed_by, proposed_at)
+           VALUES ($1, 'register-parcel', $2, '{}', '{}', $3, now() + interval '1 day', '0.0.100', $4)`,
+          [id, "a".repeat(64), scheduleId, proposedAt],
+        );
+      const earliest = "00000000-0000-4000-8000-000000000001";
+      const later = "00000000-0000-4000-8000-000000000002";
+      await stage(later, "0.0.2", "2026-09-28T10:00:01Z");
+      await stage(earliest, "0.0.1", "2026-09-28T10:00:00Z");
+
+      await migrate(TEST_DATABASE_URL, "up", () => {});
+
+      const { rows } = await pool.query<{ id: string; status: string }>(
+        "SELECT id, status FROM pending_submissions ORDER BY proposed_at",
+      );
+      expect(rows).toEqual([
+        { id: earliest, status: "pending" },
+        { id: later, status: "rejected" },
+      ]);
+    } finally {
+      await migrate(TEST_DATABASE_URL, "up", () => {});
+      await pool.query("TRUNCATE pending_submissions");
+    }
   });
 });

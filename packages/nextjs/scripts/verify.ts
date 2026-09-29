@@ -4,7 +4,8 @@
  * --skip-scan  do not page through the whole topic looking for uncached messages
  *
  * Recomputes every cached event's hash from Postgres content and compares it with the envelope on
- * the topic (via the mirror node). Exit code: 0 all verified, 1 tampering found, 2 incomplete.
+ * the topic (via the mirror node). Exit code: 0 all verified, 1 tampering found, 2 incomplete,
+ * 3 envelopes on the ledger are missing from Postgres (a deleted row, or an approval not yet finalized).
  */
 import { parseArgs } from "node:util";
 import { readDatabaseUrl, readMirrorNodeUrl, readTopicId } from "@/lib/config/env";
@@ -14,7 +15,7 @@ import { PostgresTrackingReader } from "@/lib/db/tracking-reader";
 import { parseTrackingId } from "@/lib/hashing/sha256";
 import { createMirrorClient } from "@/lib/mirror/mirror-client";
 import type { TimelineReport } from "@/lib/verify/verify-timeline";
-import { verifyTopic } from "@/lib/verify/verify-topic";
+import { verifyExitCode, verifyTopic } from "@/lib/verify/verify-topic";
 
 const ICON = { verified: "✅", tampered: "⚠️ ", unavailable: "…" } as const;
 
@@ -69,11 +70,13 @@ async function main(): Promise<number> {
         `${t.tamperedParcels} tampered parcels · ${t.unavailable} unavailable`,
     );
     if (report.uncached.length)
-      console.log(`ℹ️  on ledger but not cached: seq ${report.uncached.join(", ")}`);
+      console.log(
+        `⚠️  on the ledger but missing from Postgres: seq ${report.uncached.join(", ")} ` +
+          "(deleted from the database, or an approved change not finalized yet)",
+      );
     if (report.foreign.length)
       console.log(`ℹ️  non-envelope messages on topic: seq ${report.foreign.join(", ")}`);
-    if (t.tampered || t.tamperedParcels) return 1;
-    return t.unavailable ? 2 : 0;
+    return verifyExitCode(report);
   } finally {
     await pool.end();
   }
