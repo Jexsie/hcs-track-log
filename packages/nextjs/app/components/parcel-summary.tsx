@@ -1,6 +1,6 @@
-import type { EventContentDto, ParcelContentDto } from "@/lib/timeline/dto";
-import { formatUtc } from "@/lib/timeline/format";
-import type { ParcelVerdict } from "@/lib/verify/verdicts";
+import type { EventContentDto, ParcelContentDto } from "@/lib/cargo/timeline/dto";
+import { formatUtc } from "@/lib/cargo/timeline/format";
+import type { ParcelVerdict } from "@/lib/notary/verify/verdicts";
 import { CopyButton } from "./copy-button";
 import { AlertIcon, CheckIcon, PinIcon } from "./icons";
 

@@ -1,5 +1,5 @@
 import { AccountId, Client } from "@hiero-ledger/sdk";
-import type { OperatorConfig } from "@/lib/config/env";
+import type { OperatorConfig } from "@/lib/server/config/env";
 import { parsePrivateKey } from "./keys";
 
 /** Hedera client that pays fees as the configured operator. Callers must `close()` it. */

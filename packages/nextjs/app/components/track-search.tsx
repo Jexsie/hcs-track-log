@@ -2,7 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import type { LedgerLinks } from "@/lib/server/ledger-links";
-import { type LookupResult, lookupTimeline } from "@/lib/timeline/lookup-client";
+import { type LookupResult, lookupTimeline } from "@/lib/cargo/timeline/lookup-client";
 import { SearchIcon } from "./icons";
 import { Notice } from "./page-shell";
 import { TrackingView } from "./tracking-view";

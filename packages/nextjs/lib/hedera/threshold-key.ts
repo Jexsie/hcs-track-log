@@ -1,5 +1,5 @@
-import { type Key, KeyList, type PrivateKey, PublicKey, type Transaction } from "@hiero-ledger/sdk";
-import type { KeyRole, ThresholdKeyConfig } from "@/lib/config/env";
+import { type Key, KeyList, type PrivateKey, PublicKey } from "@hiero-ledger/sdk";
+import type { KeyRole, ThresholdKeyConfig } from "@/lib/server/config/env";
 import { parsePrivateKey, parsePublicKey } from "./keys";
 
 export class ThresholdKeyError extends Error {
@@ -16,7 +16,7 @@ const envPrefix = (role: KeyRole) => `HCS_${role.toUpperCase()}`;
  * A topic key (submit or admin) as a flat threshold KeyList: at least two keys and a threshold of
  * at least two, so no single party can write to, or reconfigure, the log.
  */
-export function buildThresholdKey(
+function buildThresholdKey(
   publicKeys: readonly PublicKey[],
   threshold: number,
   role: KeyRole,
@@ -77,11 +77,6 @@ export function assertSignersSatisfy(
       `configured signers satisfy ${distinct.size} of ${needed} required ${role}-key signatures`,
     );
   }
-}
-
-/** How many key members have validly signed `transaction`. Mirrors the network's check. */
-export function countSatisfiedSignatures(key: KeyList, transaction: Transaction): number {
-  return members(key).filter((k) => k.verifyTransaction(transaction)).length;
 }
 
 /** True when `actual` (e.g. from TopicInfoQuery) is the same threshold KeyList as `expected`. */

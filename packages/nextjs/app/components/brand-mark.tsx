@@ -1,4 +1,4 @@
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/cargo/brand";
 
 /** Logo: a stylised lake wave under a cargo box, plus the company name. */
 export function BrandMark({ className = "" }: { className?: string }) {

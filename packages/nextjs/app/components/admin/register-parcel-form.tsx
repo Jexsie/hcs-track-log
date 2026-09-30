@@ -1,8 +1,8 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { type ApiFailure, proposeRegistration } from "@/lib/admin/api";
-import { BRAND } from "@/lib/brand";
+import { type ApiFailure, proposeRegistration } from "@/lib/cargo/admin/api";
+import { BRAND } from "@/lib/cargo/brand";
 import type { SubmissionDto } from "@/lib/approvals/dto";
 import {
   EMPTY_EVENT_FORM,
@@ -16,8 +16,8 @@ import {
   toParcelPayload,
   validateEventForm,
   validateParcelForm,
-} from "@/lib/admin/validation";
-import { sampleEventForm, sampleParcelForm } from "@/lib/admin/sample-data";
+} from "@/lib/cargo/admin/validation";
+import { sampleEventForm, sampleParcelForm } from "@/lib/cargo/admin/sample-data";
 import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
 import { Field, FormSection } from "./field";

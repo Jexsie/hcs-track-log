@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { finalizeSubmission } from "@/lib/admin/api";
+import { finalizeSubmission } from "@/lib/cargo/admin/api";
 import type { FinalizeResultDto, SubmissionDto } from "@/lib/approvals/dto";
 import { expectedEnvelope } from "@/lib/approvals/expected-envelope";
 import {
@@ -10,10 +10,14 @@ import {
   approvalProgress,
   checkScheduledMessage,
 } from "@/lib/approvals/scheduled-check";
-import { MirrorNotFoundError } from "@/lib/mirror/http";
-import { type ScheduleState, fetchSchedule, fetchTopicKeys } from "@/lib/mirror/ledger-state";
-import type { DecodedKey } from "@/lib/proto/hedera";
-import { formatUtc } from "@/lib/timeline/format";
+import { MirrorNotFoundError } from "@/lib/hedera/mirror/http";
+import {
+  type ScheduleState,
+  fetchSchedule,
+  fetchTopicKeys,
+} from "@/lib/hedera/mirror/ledger-state";
+import type { DecodedKey } from "@/lib/hedera/proto/hedera";
+import { formatUtc } from "@/lib/cargo/timeline/format";
 import { useAdmin } from "./admin-context";
 import { SubmissionSummary } from "./submission-summary";
 

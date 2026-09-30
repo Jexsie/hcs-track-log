@@ -1,13 +1,18 @@
 import type { PublicKey } from "@hiero-ledger/sdk";
-import { ValidationError } from "@/lib/canonical/errors";
+import { ValidationError } from "@/lib/notary/errors";
 import {
   type FinalizeDeps,
   SubmissionNotFoundError,
   finalizeSubmission,
 } from "@/lib/approvals/finalize";
-import type { EnvelopeScheduler, PendingStore, PendingSubmission } from "@/lib/approvals/ports";
+import type {
+  EnvelopeScheduler,
+  ParcelCache,
+  PendingStore,
+  PendingSubmission,
+} from "@/lib/approvals/ports";
 import { proposeEvent, proposeRegistration } from "@/lib/approvals/propose";
-import { signInWithWallet } from "@/lib/admin-auth/sign-in";
+import { signInWithWallet } from "@/lib/server/auth/sign-in";
 import {
   type AdminIdentity,
   AuthError,
@@ -15,12 +20,11 @@ import {
   issueChallenge,
   issueSessionToken,
   readSessionToken,
-} from "@/lib/admin-auth/tokens";
-import { MirrorNotFoundError, MirrorRequestError } from "@/lib/mirror/http";
-import type { TrackingStore } from "@/lib/tracking/ports";
+} from "@/lib/server/auth/tokens";
+import { MirrorNotFoundError, MirrorRequestError } from "@/lib/hedera/mirror/http";
 import { type Logger, errorResponse, jsonResponse, readJsonBody } from "./http";
 
-export const SESSION_COOKIE = "hcs_admin_session";
+const SESSION_COOKIE = "hcs_admin_session";
 const ACCOUNT_ID = /^\d+\.\d+\.\d+$/;
 
 export interface AdminHandlerDeps {
@@ -33,7 +37,7 @@ export interface AdminHandlerDeps {
   resolveAccountKey: (accountId: string) => Promise<PublicKey>;
   scheduler: () => Promise<EnvelopeScheduler>;
   pending: () => PendingStore;
-  cache: () => Pick<TrackingStore, "parcelExists">;
+  cache: () => ParcelCache;
   finalizeDeps: () => FinalizeDeps;
   log?: Logger;
 }
@@ -76,7 +80,7 @@ function cookie(value: string, maxAge: number, secure: boolean): string {
   ].join("; ");
 }
 
-export function toSubmissionDto(s: PendingSubmission) {
+function toSubmissionDto(s: PendingSubmission) {
   return {
     id: s.id,
     kind: s.kind,

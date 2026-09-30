@@ -4,7 +4,7 @@ import {
   readMirrorNodeUrl,
   readNetwork,
   readTopicId,
-} from "@/lib/config/env";
+} from "@/lib/server/config/env";
 
 export interface LedgerLinks {
   network: HederaNetwork;

@@ -1,8 +1,8 @@
-import type { CargoEvent } from "@/lib/canonical/event";
-import type { Parcel } from "@/lib/canonical/parcel";
-import { buildEnvelope, serializeEnvelope } from "@/lib/envelope/envelope";
-import { computeParcelHash } from "@/lib/hashing/parcel-hash";
-import { computePayloadHash } from "@/lib/hashing/payload-hash";
+import type { CargoEvent } from "@/lib/cargo/event";
+import type { Parcel } from "@/lib/cargo/parcel";
+import { buildEnvelope, serializeEnvelope } from "@/lib/notary/envelope";
+import { computeParcelHash } from "@/lib/cargo/parcel";
+import { computePayloadHash } from "@/lib/cargo/event";
 import type { SubmissionKind } from "./ports";
 
 export interface SubmissionContent {

@@ -1,6 +1,19 @@
-import type { CargoEvent } from "@/lib/canonical/event";
-import type { Parcel } from "@/lib/canonical/parcel";
-import type { RecordedEvent } from "@/lib/tracking/ports";
+import type { CargoEvent } from "@/lib/cargo/event";
+import type { Parcel } from "@/lib/cargo/parcel";
+
+/** An event that has reached consensus, ready to be cached in Postgres. */
+export interface RecordedEvent {
+  parcelHash: string;
+  event: CargoEvent;
+  hcsSequenceNumber: bigint;
+  /** Convenience copy only; NOT covered by payloadHash. The mirror node is authoritative. */
+  payerAccountId: string;
+}
+
+/** Read access to the cache, to refuse proposals for unknown or already registered parcels. */
+export interface ParcelCache {
+  parcelExists(parcelHash: string): Promise<boolean>;
+}
 
 export interface ScheduledSubmission {
   scheduleId: string;

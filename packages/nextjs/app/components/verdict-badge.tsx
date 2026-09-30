@@ -1,6 +1,6 @@
-import { explorerRecordUrl } from "@/lib/timeline/explorer";
-import type { EventVerdict } from "@/lib/verify/verdicts";
-import type { HederaNetwork } from "@/lib/wallet/hip820";
+import { explorerRecordUrl } from "@/lib/cargo/timeline/explorer";
+import type { EventVerdict } from "@/lib/notary/verify/verdicts";
+import type { HederaNetwork } from "@/lib/hedera/wallet/hip820";
 import { AlertIcon, CheckIcon } from "./icons";
 
 const BASE =

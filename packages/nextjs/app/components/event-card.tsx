@@ -1,8 +1,8 @@
-import type { EventDto } from "@/lib/timeline/dto";
-import { explorerTopicUrl } from "@/lib/timeline/explorer";
-import { formatUtc } from "@/lib/timeline/format";
-import type { EventVerdict } from "@/lib/verify/verdicts";
-import type { HederaNetwork } from "@/lib/wallet/hip820";
+import type { EventDto } from "@/lib/cargo/timeline/dto";
+import { explorerTopicUrl } from "@/lib/cargo/timeline/explorer";
+import { formatUtc } from "@/lib/cargo/timeline/format";
+import type { EventVerdict } from "@/lib/notary/verify/verdicts";
+import type { HederaNetwork } from "@/lib/hedera/wallet/hip820";
 import { VerdictBadge } from "./verdict-badge";
 
 type RowState = EventVerdict["status"] | "pending";

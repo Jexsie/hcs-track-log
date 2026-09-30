@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/cargo/brand";
 
 const ACTIONS = [
   {

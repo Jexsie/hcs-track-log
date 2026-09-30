@@ -1,5 +1,5 @@
 import { PrivateKey, PublicKey } from "@hiero-ledger/sdk";
-import { ConfigError } from "@/lib/config/env";
+import { ConfigError } from "@/lib/server/config/env";
 
 /**
  * Keys are accepted DER-encoded (ED25519 or ECDSA, as shown in the Hedera portal) or as

@@ -4,7 +4,7 @@ import {
   readKeyConfig,
   readOperatorConfig,
   readTopicId,
-} from "@/lib/config/env";
+} from "@/lib/server/config/env";
 import { createClient } from "./client";
 import { assertTopicKeys } from "./create-topic";
 import { HcsScheduler } from "./hcs-scheduler";

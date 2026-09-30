@@ -5,19 +5,19 @@ import {
   readDatabaseUrl,
   readMirrorNodeUrl,
   readTopicId,
-} from "@/lib/config/env";
-import { PendingSubmissionStore } from "@/lib/db/pending-store";
-import { createPool } from "@/lib/db/pool";
-import { PostgresTrackingReader } from "@/lib/db/tracking-reader";
-import { PostgresTrackingStore } from "@/lib/db/tracking-store";
+} from "@/lib/server/config/env";
+import { PendingSubmissionStore } from "@/lib/server/db/pending-store";
+import { createPool } from "@/lib/server/db/pool";
+import { PostgresTrackingReader } from "@/lib/server/db/tracking-reader";
+import { PostgresParcelCache } from "@/lib/server/db/tracking-store";
 import { createSchedulerFromEnv } from "@/lib/hedera/scheduler-from-env";
 import {
   fetchAccountKey,
   fetchSchedule,
   fetchTopicKeys,
   keyMembers,
-} from "@/lib/mirror/ledger-state";
-import { createMirrorClient } from "@/lib/mirror/mirror-client";
+} from "@/lib/hedera/mirror/ledger-state";
+import { createMirrorClient } from "@/lib/hedera/mirror/mirror-client";
 import { createAdminHandlers } from "./admin-handlers";
 import { consoleLogger } from "./http";
 
@@ -28,7 +28,7 @@ interface Singletons {
 }
 const singletons = ((globalThis as { __hcsTrackLog?: Singletons }).__hcsTrackLog ??= {});
 
-export function getPool(): pg.Pool {
+function getPool(): pg.Pool {
   return (singletons.pool ??= createPool(readDatabaseUrl()));
 }
 
@@ -59,7 +59,7 @@ export function getAdminHandlers() {
     resolveAccountKey: (accountId) => fetchAccountKey(mirrorBaseUrl, accountId),
     scheduler: getScheduler,
     pending,
-    cache: () => new PostgresTrackingStore(getPool()),
+    cache: () => new PostgresParcelCache(getPool()),
     finalizeDeps: () => ({
       pending: pending(),
       topicId,

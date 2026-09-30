@@ -85,13 +85,13 @@ The cargo model is an example. The notary pattern works for anything that needs 
 tamper-evident history: certificates, supply-chain batches, audit logs, lab results, votes. To
 swap the domain:
 
-| Change                  | Where                                                                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Which fields are hashed | `packages/nextjs/lib/canonical/parcel.ts` (the record) and `event.ts` (each update). Reuse the normalizers in `normalize.ts` |
-| Database columns        | A new migration in `packages/nextjs/migrations/`, plus the row mapping in `lib/db/rows.ts`                                   |
-| Forms and validation    | `packages/nextjs/lib/admin/validation.ts` and `app/components/admin/`                                                        |
-| Public page             | `packages/nextjs/app/(public)/` and `app/components/`                                                                        |
-| Name and branding       | `packages/nextjs/lib/brand.ts`                                                                                               |
+| Change                  | Where                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Which fields are hashed | `packages/nextjs/lib/cargo/parcel.ts` (the record) and `event.ts` (each update). Reuse the normalizers in `lib/notary/normalize.ts` |
+| Database columns        | A new migration in `packages/nextjs/migrations/`, plus the row mapping in `lib/server/db/rows.ts`                                   |
+| Forms and validation    | `packages/nextjs/lib/cargo/admin/validation.ts` and `app/components/admin/`                                                         |
+| Public page             | `packages/nextjs/app/(public)/` and `app/components/`                                                                               |
+| Name and branding       | `packages/nextjs/lib/cargo/brand.ts`                                                                                                |
 
 The envelope, hashing, approvals, mirror-node client and verifier don't depend on the domain, so
 you can keep them as they are. Keep the invariants in [AGENTS.md](AGENTS.md#critical-invariants).
@@ -116,7 +116,6 @@ npm run keys:generate       # dev only: prints throwaway submit + admin key line
 docker compose up -d        # start Postgres
 npm run db:migrate          # create tables
 npm run topic:create        # create the topic with threshold keys; put the id in HCS_TOPIC_ID
-npm run db:seed             # optional: anchor one demo shipment
 npm run next:dev            # http://localhost:3000 (public) and /admin (staff)
 ```
 
@@ -141,17 +140,16 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 | Variable                               | Required             | Used by                              | Description                                                                                                                                                                                        |
 | -------------------------------------- | -------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `HEDERA_NETWORK`                       | No                   | all                                  | testnet \| previewnet \| mainnet. Default `testnet`.                                                                                                                                               |
-| `HEDERA_OPERATOR_ID`                   | Yes                  | server, topic:create, db:seed        | Operator account: pays for topic creation and for approval schedules. It is NOT a submit key.                                                                                                      |
-| `HEDERA_OPERATOR_KEY`                  | Yes                  | server, topic:create, db:seed        | DER- or hex-encoded ECDSA/ED25519 private key. Placeholder — never commit a real key.                                                                                                              |
-| `HCS_TOPIC_ID`                         | Yes                  | server, verify, db:seed              | Filled in after `npm run topic:create`.                                                                                                                                                            |
+| `HEDERA_OPERATOR_ID`                   | Yes                  | server, topic:create                 | Operator account: pays for topic creation and for approval schedules. It is NOT a submit key.                                                                                                      |
+| `HEDERA_OPERATOR_KEY`                  | Yes                  | server, topic:create                 | DER- or hex-encoded ECDSA/ED25519 private key. Placeholder — never commit a real key.                                                                                                              |
+| `HCS_TOPIC_ID`                         | Yes                  | server, verify                       | Filled in after `npm run topic:create`.                                                                                                                                                            |
 | `HCS_SUBMIT_PUBLIC_KEYS`               | Yes                  | server, topic:create                 | Public keys of the administrators' WALLET accounts (comma-separated). Every topic message must be approved from these wallets in the admin console; the web server never holds these private keys. |
 | `HCS_SUBMIT_THRESHOLD`                 | Yes                  | server, topic:create                 | How many wallet approvals each message needs (2..N).                                                                                                                                               |
-| `HCS_SUBMIT_SIGNER_KEYS`               | db:seed only         | db:seed                              | DEV ONLY: private keys `npm run db:seed` signs with directly. The web server never reads them.                                                                                                     |
 | `HCS_ADMIN_PUBLIC_KEYS`                | Yes                  | server, topic:create                 | Public keys of topic administrators (comma-separated). Required to create, update or delete the topic. The running server needs only these PUBLIC keys, to confirm the topic was not altered.      |
 | `HCS_ADMIN_THRESHOLD`                  | Yes                  | server, topic:create                 | How many admin signatures are required (2..N).                                                                                                                                                     |
 | `HCS_ADMIN_SIGNER_KEYS`                | topic:create only    | topic:create                         | Admin private keys, used ONLY by `npm run topic:create`. Remove them from the server afterwards.                                                                                                   |
 | `MIRROR_NODE_URL`                      | No                   | server, browser verification, verify | Default `https://<network>.mirrornode.hedera.com`.                                                                                                                                                 |
-| `DATABASE_URL`                         | Yes                  | server, db:migrate, db:seed, verify  | Matches docker-compose.yml defaults.                                                                                                                                                               |
+| `DATABASE_URL`                         | Yes                  | server, db:migrate, verify           | Matches docker-compose.yml defaults.                                                                                                                                                               |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | For the staff portal | staff portal (browser)               | WalletConnect Cloud project id from https://dashboard.reown.com (32 hex characters).                                                                                                               |
 | `ADMIN_SESSION_SECRET`                 | For the staff portal | server                               | HMAC key for sign-in challenges and admin session cookies. Generate: openssl rand -hex 32.                                                                                                         |
 | `HCS_APPROVAL_WINDOW_HOURS`            | No                   | server                               | How long a proposal waits for wallet approvals, in hours (1..1488; Hedera allows up to 62 days). Default `24`.                                                                                     |
@@ -174,7 +172,6 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 | `npm run topic:create`  | `tsx scripts/create-topic.ts`                                                            | Create the topic with threshold admin + submit keys and verify them on-chain                                   |
 | `npm run keys:generate` | `tsx scripts/generate-keys.ts`                                                           | Print throwaway submit/admin key sets for local testing (`-- --submit 2/3 --admin 2/3`)                        |
 | `npm run db:migrate`    | `tsx scripts/migrate.ts`                                                                 | Apply pending migrations (`-- --down` rolls back the latest)                                                   |
-| `npm run db:seed`       | `tsx scripts/seed.ts`                                                                    | Dev only: anchor a demo shipment by signing directly with `HCS_SUBMIT_SIGNER_KEYS`                             |
 | `npm run verify`        | `tsx scripts/verify.ts`                                                                  | Recompute every cached update and compare it with the ledger (`-- --topic <id> [--parcel <id>] [--skip-scan]`) |
 | `npm run docs:generate` | `node scripts/generate-docs.mjs && prettier --write README.md packages/nextjs/README.md` | Regenerate the README tables from `package.json`, `.env.example` and the API routes                            |
 
@@ -184,18 +181,15 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 
 ```
 packages/nextjs/
-  app/            Next.js App Router: public tracker, staff portal, API routes
+  app/              Next.js App Router: public tracker, staff portal, API routes
   lib/
-    canonical/    normalizers + the canonical builders (domain-specific fields)
-    hashing/      SHA-256 of the canonical bytes
-    envelope/     the on-chain {v, parcelHash, payloadHash} message
-    approvals/    propose → approve → finalize (scheduled transactions)
-    verify/       recompute-and-compare verifier, topic scan
-    mirror/       mirror-node client (messages, schedules, keys)
-    hedera/       topic creation, threshold keys, scheduler
-    db/           Postgres read cache and staging store
-  migrations/     plain SQL (node-pg-migrate)
-  scripts/        topic:create, keys:generate, db:migrate, db:seed, verify
+    notary/         THE CORE: canonical form, SHA-256, the on-chain envelope, the verifier
+    cargo/          THE DEMO DOMAIN: hashed fields, forms, timeline, branding (replace this)
+    approvals/      propose → approve in wallets → finalize (scheduled transactions)
+    hedera/         topic, threshold keys, scheduler, mirror node, wallets, protobuf decoding
+    server/         API handlers, Postgres, config, admin sign-in
+  migrations/       plain SQL (node-pg-migrate)
+  scripts/          topic:create, keys:generate, db:migrate, verify
 ```
 
 ## See tamper detection

@@ -1,26 +1,48 @@
 import { randomUUID } from "node:crypto";
-import { ValidationError } from "@/lib/canonical/errors";
-import type { CargoEvent } from "@/lib/canonical/event";
-import { buildEnvelope, serializeEnvelope } from "@/lib/envelope/envelope";
-import { computePayloadHash } from "@/lib/hashing/payload-hash";
-import { parseTrackingId } from "@/lib/hashing/sha256";
-import { prepareEvent } from "@/lib/tracking/anchor";
-import {
-  ParcelExistsError,
-  ParcelNotFoundError,
-  SubmissionFailedError,
-} from "@/lib/tracking/errors";
-import type { TrackingStore } from "@/lib/tracking/ports";
-import { prepareRegistration } from "@/lib/tracking/register-parcel";
-import type { EnvelopeScheduler, NewSubmission, PendingStore, PendingSubmission } from "./ports";
+import { ValidationError } from "@/lib/notary/errors";
+import { type CargoEvent, normalizeCargoEvent, computePayloadHash } from "@/lib/cargo/event";
+import { type Parcel, normalizeParcel, computeParcelHash } from "@/lib/cargo/parcel";
+import { buildEnvelope, serializeEnvelope } from "@/lib/notary/envelope";
+import { parseTrackingId } from "@/lib/notary/sha256";
+import { ParcelExistsError, ParcelNotFoundError, SubmissionFailedError } from "./errors";
+import type {
+  EnvelopeScheduler,
+  NewSubmission,
+  ParcelCache,
+  PendingStore,
+  PendingSubmission,
+} from "./ports";
 
 export interface ProposeDeps {
   scheduler: EnvelopeScheduler;
   pending: PendingStore;
-  cache: Pick<TrackingStore, "parcelExists">;
+  cache: ParcelCache;
   /** Account id of the signed-in administrator. */
   proposedBy: string;
   now?: () => Date;
+}
+
+/** Whole-second UTC, matching the canonical timestamp format. */
+function toWholeSecond(date: Date): Date {
+  return new Date(Math.floor(date.getTime() / 1000) * 1000);
+}
+
+/**
+ * Validate a registration and derive its tracking ID. `createdAt` is always assigned here from
+ * `now`, never taken from the client.
+ */
+async function prepareRegistration(
+  input: { parcel: unknown; firstEvent: unknown },
+  now: Date,
+): Promise<{ parcel: Parcel; event: CargoEvent; parcelHash: string }> {
+  if (typeof input.parcel !== "object" || input.parcel === null || Array.isArray(input.parcel)) {
+    throw new ValidationError("parcel", "must be an object");
+  }
+
+  const parcel = normalizeParcel({ ...input.parcel, createdAt: toWholeSecond(now) });
+  const event = normalizeCargoEvent(input.firstEvent);
+
+  return { parcel, event, parcelHash: await computeParcelHash(parcel) };
 }
 
 /**
@@ -81,7 +103,7 @@ export async function proposeEvent(
     typeof input.parcelHash === "string" ? parseTrackingId(input.parcelHash) : null;
 
   if (!parcelHash) throw new ValidationError("parcelHash", "must be a 64-character hex SHA-256");
-  const event: CargoEvent = prepareEvent(input.event);
+  const event: CargoEvent = normalizeCargoEvent(input.event);
 
   if (!(await deps.cache.parcelExists(parcelHash))) throw new ParcelNotFoundError(parcelHash);
 

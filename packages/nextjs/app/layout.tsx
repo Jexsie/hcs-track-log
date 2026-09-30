@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/cargo/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {

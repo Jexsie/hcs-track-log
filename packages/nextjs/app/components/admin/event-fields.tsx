@@ -1,8 +1,8 @@
 "use client";
 
-import { toLocalInputValue } from "@/lib/admin/datetime";
-import { BRAND } from "@/lib/brand";
-import type { EventForm, FormErrors } from "@/lib/admin/validation";
+import { toLocalInputValue } from "@/lib/cargo/admin/datetime";
+import { BRAND } from "@/lib/cargo/brand";
+import type { EventForm, FormErrors } from "@/lib/cargo/admin/validation";
 import { Field, FormSection } from "./field";
 
 const STATUSES = [

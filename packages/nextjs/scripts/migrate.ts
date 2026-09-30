@@ -3,9 +3,9 @@
  * npm run db:migrate -- --down  roll back the latest migration
  */
 import { parseArgs } from "node:util";
-import { readDatabaseUrl } from "@/lib/config/env";
-import { loadRootEnv } from "@/lib/config/load-env";
-import { migrate } from "@/lib/db/migrate";
+import { readDatabaseUrl } from "@/lib/server/config/env";
+import { loadRootEnv } from "@/lib/server/config/load-env";
+import { migrate } from "@/lib/server/db/migrate";
 
 const { values } = parseArgs({ options: { down: { type: "boolean", default: false } } });
 

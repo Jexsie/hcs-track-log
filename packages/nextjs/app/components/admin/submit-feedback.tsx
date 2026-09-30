@@ -1,4 +1,4 @@
-import type { ApiFailure } from "@/lib/admin/api";
+import type { ApiFailure } from "@/lib/cargo/admin/api";
 
 const MESSAGE: Record<string, string> = {
   UNAUTHENTICATED: "Your session has expired. Sign in again.",

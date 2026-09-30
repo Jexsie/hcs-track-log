@@ -18,10 +18,10 @@ import {
   getSession,
   requestChallenge,
   signOut as endSession,
-} from "@/lib/admin/api";
-import { fetchAccountKey } from "@/lib/mirror/ledger-state";
-import { type HederaNetwork, hederaAccountFromSession } from "@/lib/wallet/hip820";
-import { buildScheduleSignTransaction } from "@/lib/wallet/schedule-sign";
+} from "@/lib/cargo/admin/api";
+import { fetchAccountKey } from "@/lib/hedera/mirror/ledger-state";
+import { type HederaNetwork, hederaAccountFromSession } from "@/lib/hedera/wallet/hip820";
+import { buildScheduleSignTransaction } from "@/lib/hedera/wallet/schedule-sign";
 import {
   disconnectWallet,
   getSignClient,
@@ -29,7 +29,7 @@ import {
   startPairing,
   walletSignAndExecute,
   walletSignMessage,
-} from "@/lib/wallet/wallet-connect-client";
+} from "@/lib/hedera/wallet/wallet-connect-client";
 
 export interface AdminConfig {
   network: HederaNetwork;

@@ -5,14 +5,14 @@ import { type AdminConfig, AdminProvider } from "@/app/components/admin/admin-co
 import { StaffNav } from "@/app/components/admin/staff-nav";
 import { WalletPanel } from "@/app/components/admin/wallet-panel";
 import { BrandMark } from "@/app/components/brand-mark";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/cargo/brand";
 import {
   ConfigError,
   readMirrorNodeUrl,
   readNetwork,
   readTopicId,
   readWalletConnectProjectId,
-} from "@/lib/config/env";
+} from "@/lib/server/config/env";
 
 export const metadata: Metadata = {
   title: `${BRAND.portal} — ${BRAND.name}`,

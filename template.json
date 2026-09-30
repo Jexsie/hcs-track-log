@@ -39,10 +39,6 @@
         "description": ".env. Number of wallet approvals required per message (2..N)."
       },
       {
-        "key": "HCS_SUBMIT_SIGNER_KEYS",
-        "description": ".env. DEV ONLY: private keys used by `npm run db:seed` to sign directly. The web server never reads them."
-      },
-      {
         "key": "HCS_ADMIN_PUBLIC_KEYS",
         "description": ".env. Comma-separated public keys of topic administrators. Becomes the topic's threshold admin key (required to update or delete the topic)."
       },
@@ -120,10 +116,6 @@
             {
               "label": "Create the HCS topic with threshold admin and submit keys, then set HCS_TOPIC_ID in .env",
               "command": "{run:topic:create}"
-            },
-            {
-              "label": "Dev only: anchor a demo parcel, signing directly with HCS_SUBMIT_SIGNER_KEYS (they must be submit keys)",
-              "command": "{run:db:seed}"
             }
           ]
         },

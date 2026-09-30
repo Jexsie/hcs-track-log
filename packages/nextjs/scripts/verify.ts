@@ -8,14 +8,14 @@
  * 3 envelopes on the ledger are missing from Postgres (a deleted row, or an approval not yet finalized).
  */
 import { parseArgs } from "node:util";
-import { readDatabaseUrl, readMirrorNodeUrl, readTopicId } from "@/lib/config/env";
-import { loadRootEnv } from "@/lib/config/load-env";
-import { createPool } from "@/lib/db/pool";
-import { PostgresTrackingReader } from "@/lib/db/tracking-reader";
-import { parseTrackingId } from "@/lib/hashing/sha256";
-import { createMirrorClient } from "@/lib/mirror/mirror-client";
-import type { TimelineReport } from "@/lib/verify/verify-timeline";
-import { verifyExitCode, verifyTopic } from "@/lib/verify/verify-topic";
+import { readDatabaseUrl, readMirrorNodeUrl, readTopicId } from "@/lib/server/config/env";
+import { loadRootEnv } from "@/lib/server/config/load-env";
+import { createPool } from "@/lib/server/db/pool";
+import { PostgresTrackingReader } from "@/lib/server/db/tracking-reader";
+import { parseTrackingId } from "@/lib/notary/sha256";
+import { createMirrorClient } from "@/lib/hedera/mirror/mirror-client";
+import type { TimelineReport } from "@/lib/notary/verify/verify-timeline";
+import { verifyExitCode, verifyTopic } from "@/lib/notary/verify/verify-topic";
 
 const ICON = { verified: "✅", tampered: "⚠️ ", unavailable: "…" } as const;
 

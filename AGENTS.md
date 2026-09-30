@@ -20,7 +20,7 @@ Break one of these and the app still runs, but its proofs become meaningless.
    hashes them fresh. There is no payload-hash column, and no code path compares a stored hash with
    the chain. Every hash shown in the UI is recomputed.
 3. **One canonical builder per record type.** Submit and verify call the same function
-   (`lib/canonical/parcel.ts`, `lib/canonical/event.ts`): sorted keys, compact separators, UTF-8,
+   (`lib/cargo/parcel.ts`, `lib/cargo/event.ts`): sorted keys, compact separators, UTF-8,
    trimmed NFC text, fixed-scale decimal strings, ISO-8601 UTC `Z` timestamps. Unknown fields are
    rejected.
 4. **Two disjoint hashes.** `parcelHash` (the tracking ID) covers the immutable parcel fields;
@@ -35,49 +35,49 @@ Break one of these and the app still runs, but its proofs become meaningless.
 
 ## Key paths
 
-All code lives in `packages/nextjs/`. Paths below are relative to it unless they start at the root.
+All code lives in `packages/nextjs/`. `lib/` has five groups; the first is what the template is
+about, the second is what you replace for your own domain.
 
-| Area                   | Path                                  | What it holds                                                                 |
-| ---------------------- | ------------------------------------- | ----------------------------------------------------------------------------- |
-| **Canonical form**     | `lib/canonical/normalize.ts`          | Primitive normalizers (text, int, decimal, timestamp)                         |
-|                        | `lib/canonical/parcel.ts`, `event.ts` | **The canonical builders.** Domain fields are defined here                    |
-|                        | `lib/canonical/canonicalize.ts`       | The single deterministic serializer                                           |
-| **Hashing / envelope** | `lib/hashing/`                        | WebCrypto SHA-256, `computeParcelHash`, `computePayloadHash`                  |
-|                        | `lib/envelope/envelope.ts`            | Build, serialize and strictly parse the on-chain message                      |
-| **Write path**         | `lib/approvals/propose.ts`            | Validate → hash → `ScheduleCreate` → stage. Never touches the cache           |
-|                        | `lib/approvals/finalize.ts`           | Executed + matches recomputed envelope → cache write; else pending / rejected |
-|                        | `lib/approvals/expected-envelope.ts`  | Envelope from content, shared by browser pre-approval check and finalize      |
-|                        | `lib/db/pending-store.ts`             | Staging table; `complete()` writes the cache in one transaction               |
-| **Verify path**        | `lib/verify/verify-event.ts`          | **The verifier**: recompute → fetch anchor → compare                          |
-|                        | `lib/verify/verify-topic.ts`          | CLI core: all parcels + topic scan for uncached / foreign messages            |
-|                        | `app/components/use-verification.ts`  | The same check, run in the customer's browser                                 |
-| **Ledger access**      | `lib/mirror/`                         | Mirror-node client (messages, schedules, account and topic keys)              |
-|                        | `lib/hedera/`                         | Topic creation, threshold keys, scheduler, operator client                    |
-|                        | `lib/proto/`                          | Bounds-checked protobuf decoding of untrusted wallet / mirror bytes           |
-| **Auth**               | `lib/admin-auth/`                     | HMAC challenge + session tokens, HIP-820 signature check, wallet sign-in      |
-|                        | `lib/wallet/`                         | WalletConnect client, HIP-820 requests, `ScheduleSign` builder                |
-| **Server**             | `lib/server/admin-handlers.ts`        | Staff API: sign-in, propose, finalize, error mapping                          |
-|                        | `lib/server/read-handlers.ts`         | Public lookup (`POST /api/parcels/lookup`)                                    |
-|                        | `lib/server/services.ts`              | Process-wide wiring of Postgres, Hedera and the mirror node                   |
-|                        | `lib/config/env.ts`                   | Typed readers for every env var                                               |
-| **Data**               | `migrations/`                         | Plain SQL schema (no payload-hash column)                                     |
-|                        | `lib/db/rows.ts`                      | Column → canonical-builder input mapping                                      |
-| **UI**                 | `app/(public)/`, `app/admin/`         | Customer tracker and staff portal pages                                       |
-|                        | `app/components/`                     | Timeline, verdicts, forms, approval cards                                     |
-|                        | `lib/brand.ts`                        | Demo branding (Kivu Cargo)                                                    |
-| **Scripts**            | `scripts/`                            | `topic:create`, `keys:generate`, `db:migrate`, `db:seed`, `verify`            |
-| **Repo (root)**        | `.env.example`, `template.json`       | Env placeholders; scaffold-hbar manifest                                      |
-|                        | `scripts/generate-docs.mjs`           | Regenerates the README tables; fails on undocumented scripts, vars or routes  |
+| Group         | Path                                  | What it holds                                                                 |
+| ------------- | ------------------------------------- | ----------------------------------------------------------------------------- |
+| **notary**    | `lib/notary/canonicalize.ts`          | The single deterministic serializer (sorted keys, compact, UTF-8)             |
+| (the core)    | `lib/notary/normalize.ts`, `shape.ts` | Primitive normalizers and strict object readers (unknown fields rejected)     |
+|               | `lib/notary/sha256.ts`                | WebCrypto SHA-256 and tracking-ID parsing                                     |
+|               | `lib/notary/envelope.ts`              | Build, serialize and strictly parse `{ v, parcelHash, payloadHash }`          |
+|               | `lib/notary/verify/`                  | **The verifier**: recompute → fetch anchor → compare; topic scan for the CLI  |
+| **cargo**     | `lib/cargo/parcel.ts`, `event.ts`     | **The domain schema**: hashed fields, canonical builders, `compute*Hash`      |
+| (the demo)    | `lib/cargo/admin/`                    | Staff forms: validation, local-time input, sample data, browser API client    |
+|               | `lib/cargo/timeline/`                 | Public timeline shape, ordering, formatting, HashScan links                   |
+|               | `lib/cargo/brand.ts`                  | Demo branding (Kivu Cargo)                                                    |
+| **approvals** | `lib/approvals/propose.ts`            | Validate → hash → `ScheduleCreate` → stage. Never touches the cache           |
+|               | `lib/approvals/finalize.ts`           | Executed + matches recomputed envelope → cache write; else pending / rejected |
+|               | `lib/approvals/expected-envelope.ts`  | Envelope from content, shared by the browser pre-approval check and finalize  |
+| **hedera**    | `lib/hedera/*.ts`                     | Topic creation, threshold keys, scheduler, operator client                    |
+|               | `lib/hedera/mirror/`                  | Mirror-node client: messages, schedules, account and topic keys               |
+|               | `lib/hedera/wallet/`                  | WalletConnect, HIP-820 requests, the `ScheduleSign` a wallet approves         |
+|               | `lib/hedera/proto/`                   | Bounds-checked protobuf decoding of untrusted wallet / mirror bytes           |
+| **server**    | `lib/server/*-handlers.ts`            | Staff API (sign-in, propose, finalize) and public lookup                      |
+|               | `lib/server/services.ts`              | Process-wide wiring of Postgres, Hedera and the mirror node                   |
+|               | `lib/server/db/`                      | Pool, migrations runner, read cache, staging store, column → content mapping  |
+|               | `lib/server/auth/`                    | HMAC challenge + session tokens, HIP-820 signature check, wallet sign-in      |
+|               | `lib/server/config/env.ts`            | Typed readers for every env var                                               |
+| **app**       | `app/(public)/`, `app/admin/`         | Customer tracker and staff portal pages                                       |
+|               | `app/components/use-verification.ts`  | The verifier, run in the customer's browser                                   |
+| **other**     | `migrations/`, `scripts/`             | Plain SQL schema; `topic:create`, `keys:generate`, `db:migrate`, `verify`     |
+|               | `.env.example`, `template.json`       | Env placeholders; scaffold-hbar manifest                                      |
+
+The notary primitives import nothing outside `lib/notary/`. Only `notary/verify/` reaches out: to
+the cargo hash functions and the mirror client, because that is where the pieces meet.
 
 ## Common tasks
 
-| Task                      | Do this                                                                                                                                                                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Change a hashed field     | Edit the canonical builder, add a migration, update `lib/db/rows.ts`, forms and fixtures. Old anchors will not match the new shape, so start a fresh topic and database |
-| Add an env var            | `.env.example` (with a comment), `lib/config/env.ts`, `template.json`, `ENV_META` in `scripts/generate-docs.mjs`, then `npm run docs:generate`                          |
-| Add a script or API route | Describe it in `scripts/generate-docs.mjs`, then `npm run docs:generate`                                                                                                |
-| Add a migration           | New timestamped file in `migrations/` with a working `-- Down Migration`                                                                                                |
-| Change UI copy            | Plain cargo language, no ledger jargon, no emojis                                                                                                                       |
+| Task                      | Do this                                                                                                                                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Change a hashed field     | Edit the canonical builder, add a migration, update `lib/server/db/rows.ts` and the forms in `lib/cargo/admin/`. Old anchors will not match the new shape, so start a fresh topic and database |
+| Add an env var            | `.env.example` (with a comment), `lib/server/config/env.ts`, `template.json`, `ENV_META` in `scripts/generate-docs.mjs`, then `npm run docs:generate`                                          |
+| Add a script or API route | Describe it in `scripts/generate-docs.mjs`, then `npm run docs:generate`                                                                                                                       |
+| Add a migration           | New timestamped file in `migrations/` with a working `-- Down Migration`                                                                                                                       |
+| Change UI copy            | Plain cargo language, no ledger jargon, no emojis                                                                                                                                              |
 
 ## Commands
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { sampleDataAllowed } from "@/lib/admin/sample-data";
+import { sampleDataAllowed } from "@/lib/cargo/admin/sample-data";
 import { useAdmin } from "./admin-context";
 
 /** Fills the form with random, valid demo data. Hidden on mainnet. */

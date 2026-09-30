@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createMirrorClient } from "@/lib/mirror/mirror-client";
-import { type TimelineDto, eventsToVerify } from "@/lib/timeline/dto";
-import type { EventVerdict, ParcelVerdict } from "@/lib/verify/verdicts";
-import { verifyTimeline } from "@/lib/verify/verify-timeline";
+import { createMirrorClient } from "@/lib/hedera/mirror/mirror-client";
+import { type TimelineDto, eventsToVerify } from "@/lib/cargo/timeline/dto";
+import type { EventVerdict, ParcelVerdict } from "@/lib/notary/verify/verdicts";
+import { verifyTimeline } from "@/lib/notary/verify/verify-timeline";
 
 interface RunState {
   run: number;

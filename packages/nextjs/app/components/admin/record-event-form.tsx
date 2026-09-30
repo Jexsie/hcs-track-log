@@ -6,7 +6,7 @@ import {
   type ParcelSummary,
   fetchParcelSummary,
   proposeEvent,
-} from "@/lib/admin/api";
+} from "@/lib/cargo/admin/api";
 import type { SubmissionDto } from "@/lib/approvals/dto";
 import {
   EMPTY_EVENT_FORM,
@@ -16,9 +16,9 @@ import {
   friendlyMessage,
   toEventPayload,
   validateEventForm,
-} from "@/lib/admin/validation";
-import { parseTrackingId } from "@/lib/hashing/sha256";
-import { sampleEventForm } from "@/lib/admin/sample-data";
+} from "@/lib/cargo/admin/validation";
+import { parseTrackingId } from "@/lib/notary/sha256";
+import { sampleEventForm } from "@/lib/cargo/admin/sample-data";
 import { useAdmin } from "./admin-context";
 import { EventFields } from "./event-fields";
 import { Field, FormSection } from "./field";

@@ -1,12 +1,11 @@
-import { ValidationError } from "@/lib/canonical/errors";
-import { ConfigError } from "@/lib/config/env";
+import { ValidationError } from "@/lib/notary/errors";
+import { ConfigError } from "@/lib/server/config/env";
 import { ThresholdKeyError } from "@/lib/hedera/threshold-key";
 import {
-  DerivedWriteError,
   ParcelExistsError,
   ParcelNotFoundError,
   SubmissionFailedError,
-} from "@/lib/tracking/errors";
+} from "@/lib/approvals/errors";
 
 export type Logger = (message: string, detail?: unknown) => void;
 
@@ -66,26 +65,13 @@ export function errorResponse(error: unknown, log: Logger = console.error): Resp
         );
   }
 
-  if (error instanceof DerivedWriteError) {
-    // The event IS on the ledger; its content exists only here. Log everything needed to replay it.
-    log("anchored event could not be cached; replay this insert", {
-      pending: error.pending,
-      parcel: error.parcel,
-      cause: error.cause,
-    });
-
-    return failure(500, "CACHE_WRITE_FAILED", "the event was anchored but could not be cached", {
-      hcsSequenceNumber: error.hcsSequenceNumber,
-    });
-  }
-
   log("unhandled error", error);
 
   return failure(500, "INTERNAL_ERROR", "internal server error");
 }
 
 /** Server-side log serialization: bigints as strings, Errors with name, message and cause. */
-export function serializeForLog(detail: unknown): string {
+function serializeForLog(detail: unknown): string {
   return JSON.stringify(detail, (key, value: unknown) => {
     if (value instanceof Error) {
       return { name: value.name, message: value.message, cause: value.cause };

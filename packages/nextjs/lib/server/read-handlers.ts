@@ -1,14 +1,14 @@
-import { ValidationError } from "@/lib/canonical/errors";
-import type { PostgresTrackingReader } from "@/lib/db/tracking-reader";
-import { parseTrackingId } from "@/lib/hashing/sha256";
-import { type TimelineDto, toTimelineDto } from "@/lib/timeline/dto";
-import { ParcelNotFoundError } from "@/lib/tracking/errors";
+import { ValidationError } from "@/lib/notary/errors";
+import type { PostgresTrackingReader } from "@/lib/server/db/tracking-reader";
+import { parseTrackingId } from "@/lib/notary/sha256";
+import { type TimelineDto, toTimelineDto } from "@/lib/cargo/timeline/dto";
+import { ParcelNotFoundError } from "@/lib/approvals/errors";
 import { type Logger, errorResponse, jsonResponse, readJsonBody } from "./http";
 
 export type TimelineReader = Pick<PostgresTrackingReader, "findParcel" | "listEvents">;
 
 /** Database-first read by exact tracking ID. Returns null when there is no such parcel. */
-export async function loadTimeline(
+async function loadTimeline(
   reader: TimelineReader,
   parcelHash: string,
 ): Promise<TimelineDto | null> {

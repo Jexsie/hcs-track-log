@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SubmissionDto } from "@/lib/approvals/dto";
-import { formatUtc } from "@/lib/timeline/format";
+import { formatUtc } from "@/lib/cargo/timeline/format";
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (

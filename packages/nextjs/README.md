@@ -214,7 +214,7 @@ and have whole-second precision.
 
 ## Branding and wording
 
-To rebrand the demo, edit `lib/brand.ts` (name, portal label, booking-reference prefix and the
+To rebrand the demo, edit `lib/cargo/brand.ts` (name, portal label, booking-reference prefix and the
 company's own carrier). The logo is in `app/components/brand-mark.tsx`.
 
 The UI uses plain cargo language: shipments, updates, tracking ID, shipper, consignee, carrier. It

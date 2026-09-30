@@ -1,6 +1,6 @@
-import { MirrorNotFoundError } from "@/lib/mirror/http";
-import type { ScheduleState } from "@/lib/mirror/ledger-state";
-import type { MirrorClient } from "@/lib/mirror/mirror-client";
+import { MirrorNotFoundError } from "@/lib/hedera/mirror/http";
+import type { ScheduleState } from "@/lib/hedera/mirror/ledger-state";
+import type { MirrorClient } from "@/lib/hedera/mirror/mirror-client";
 import { expectedEnvelope } from "./expected-envelope";
 import type { PendingStore } from "./ports";
 

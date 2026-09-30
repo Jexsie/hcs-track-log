@@ -26,6 +26,7 @@ export class HcsScheduler implements EnvelopeScheduler {
   async schedule(message: Uint8Array, memo: string): Promise<ScheduledSubmission> {
     const { client, topicId, approvalWindowMs, now = () => new Date() } = this.options;
     const expiresAt = new Date(Math.floor((now().getTime() + approvalWindowMs) / 1000) * 1000);
+
     const response = await new ScheduleCreateTransaction()
       .setScheduledTransaction(
         new TopicMessageSubmitTransaction().setTopicId(topicId).setMessage(message),
@@ -34,6 +35,7 @@ export class HcsScheduler implements EnvelopeScheduler {
       .setExpirationTime(Timestamp.fromDate(expiresAt))
       .setWaitForExpiry(false)
       .execute(client);
+
     const { scheduleId } = await response.getReceipt(client);
 
     if (!scheduleId) throw new Error("schedule receipt did not include a schedule id");

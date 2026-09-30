@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listSubmissions } from "@/lib/admin/api";
+import { listSubmissions } from "@/lib/cargo/admin/api";
 import type { SubmissionDto } from "@/lib/approvals/dto";
 import { useAdmin } from "./admin-context";
 import { ApprovalCard } from "./approval-card";

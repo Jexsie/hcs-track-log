@@ -1,5 +1,5 @@
-import type { CargoEvent } from "@/lib/canonical/event";
-import type { Parcel } from "@/lib/canonical/parcel";
+import type { CargoEvent } from "@/lib/cargo/event";
+import type { Parcel } from "@/lib/cargo/parcel";
 import type { SubmissionKind, SubmissionStatus } from "./ports";
 
 /** A pending submission as JSON (what the admin API returns). */

@@ -6,8 +6,8 @@
  *   submit key ← HCS_SUBMIT_PUBLIC_KEYS / HCS_SUBMIT_THRESHOLD
  * then reads the topic back to confirm both are in force.
  */
-import { readKeyConfig, readOperatorConfig, readSignerKeys } from "@/lib/config/env";
-import { loadRootEnv } from "@/lib/config/load-env";
+import { readKeyConfig, readOperatorConfig, readSignerKeys } from "@/lib/server/config/env";
+import { loadRootEnv } from "@/lib/server/config/load-env";
 import { createClient } from "@/lib/hedera/client";
 import { createTrackingTopic } from "@/lib/hedera/create-topic";
 import { parsePrivateKey } from "@/lib/hedera/keys";

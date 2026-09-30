@@ -2,8 +2,9 @@
  * npm run keys:generate -- [--submit 2/3] [--admin 2/3]
  *
  * Generates ED25519 keypairs for the topic's submit key and admin key (threshold/count each) and
- * prints .env lines for a local/dev setup. In production each authorized party generates its own
- * key and shares only the public key.
+ * prints .env lines for a local/dev setup. Submit private keys never go in .env: import them into
+ * test wallets, which approve every message. In production each party generates its own key and
+ * shares only the public key.
  */
 import { parseArgs } from "node:util";
 import { PrivateKey } from "@hiero-ledger/sdk";
@@ -38,6 +39,14 @@ function printRole(role: "submit" | "admin", spec: string, purpose: string): voi
   console.log(`\n# ${role} key: ${threshold}-of-${count}, ${purpose}`);
   console.log(`${prefix}_PUBLIC_KEYS=${keys.map((k) => k.publicKey.toStringDer()).join(",")}`);
   console.log(`${prefix}_THRESHOLD=${threshold}`);
+
+  if (role === "submit") {
+    console.log("# Submit private keys: import each into a test wallet (not into .env):");
+    for (const k of keys) console.log(`# ${k.toStringDer()}`);
+
+    return;
+  }
+
   console.log(
     `${prefix}_SIGNER_KEYS=${keys
       .slice(0, threshold)
@@ -51,8 +60,12 @@ function printRole(role: "submit" | "admin", spec: string, purpose: string): voi
   }
 }
 
-console.log("# The *_SIGNER_KEYS below are SECRET: .env only, never git.");
-printRole("submit", values.submit, "required for every message the server submits");
+console.log("# Every private key below is SECRET: never commit it.");
+printRole(
+  "submit",
+  values.submit,
+  "held by the administrators' wallets, which approve every message",
+);
 printRole(
   "admin",
   values.admin,

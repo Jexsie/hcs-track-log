@@ -1,6 +1,6 @@
 import type { PublicKey } from "@hiero-ledger/sdk";
-import { type ScheduleState, keyMembers } from "@/lib/mirror/ledger-state";
-import type { DecodedKey } from "@/lib/proto/hedera";
+import { type ScheduleState, keyMembers } from "@/lib/hedera/mirror/ledger-state";
+import type { DecodedKey } from "@/lib/hedera/proto/hedera";
 
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && a.every((v, i) => v === b[i]);

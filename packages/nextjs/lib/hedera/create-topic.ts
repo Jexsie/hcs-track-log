@@ -21,7 +21,7 @@ export interface CreateTopicOptions extends TopicKeys {
   adminSigners: readonly PrivateKey[];
 }
 
-export function buildCreateTopicTransaction({
+function buildCreateTopicTransaction({
   adminKey,
   submitKey,
   memo,
@@ -33,7 +33,7 @@ export function buildCreateTopicTransaction({
 }
 
 /** Freeze the creation and co-sign it with enough admin keys, without sending it. */
-export async function prepareCreateTopicTransaction(
+async function prepareCreateTopicTransaction(
   client: Client,
   options: CreateTopicOptions,
 ): Promise<TopicCreateTransaction> {

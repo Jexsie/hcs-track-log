@@ -22,22 +22,20 @@ const SCRIPT_DESCRIPTIONS = {
   "keys:generate":
     "Print throwaway submit/admin key sets for local testing (`-- --submit 2/3 --admin 2/3`)",
   "db:migrate": "Apply pending migrations (`-- --down` rolls back the latest)",
-  "db:seed": "Dev only: anchor a demo shipment by signing directly with `HCS_SUBMIT_SIGNER_KEYS`",
   verify:
     "Recompute every cached update and compare it with the ledger (`-- --topic <id> [--parcel <id>] [--skip-scan]`)",
   "docs:generate":
     "Regenerate the README tables from `package.json`, `.env.example` and the API routes",
 };
 
-// [required, used by, default] per the readers in packages/nextjs/lib/config/env.ts
+// [required, used by, default] per the readers in packages/nextjs/lib/server/config/env.ts
 const ENV_META = {
   HEDERA_NETWORK: ["No", "all", "Default `testnet`."],
-  HEDERA_OPERATOR_ID: ["Yes", "server, topic:create, db:seed", ""],
-  HEDERA_OPERATOR_KEY: ["Yes", "server, topic:create, db:seed", ""],
-  HCS_TOPIC_ID: ["Yes", "server, verify, db:seed", ""],
+  HEDERA_OPERATOR_ID: ["Yes", "server, topic:create", ""],
+  HEDERA_OPERATOR_KEY: ["Yes", "server, topic:create", ""],
+  HCS_TOPIC_ID: ["Yes", "server, verify", ""],
   HCS_SUBMIT_PUBLIC_KEYS: ["Yes", "server, topic:create", ""],
   HCS_SUBMIT_THRESHOLD: ["Yes", "server, topic:create", ""],
-  HCS_SUBMIT_SIGNER_KEYS: ["db:seed only", "db:seed", ""],
   HCS_ADMIN_PUBLIC_KEYS: ["Yes", "server, topic:create", ""],
   HCS_ADMIN_THRESHOLD: ["Yes", "server, topic:create", ""],
   HCS_ADMIN_SIGNER_KEYS: ["topic:create only", "topic:create", ""],
@@ -46,7 +44,7 @@ const ENV_META = {
     "server, browser verification, verify",
     "Default `https://<network>.mirrornode.hedera.com`.",
   ],
-  DATABASE_URL: ["Yes", "server, db:migrate, db:seed, verify", ""],
+  DATABASE_URL: ["Yes", "server, db:migrate, verify", ""],
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ["For the staff portal", "staff portal (browser)", ""],
   ADMIN_SESSION_SECRET: ["For the staff portal", "server", ""],
   HCS_APPROVAL_WINDOW_HOURS: ["No", "server", "Default `24`."],

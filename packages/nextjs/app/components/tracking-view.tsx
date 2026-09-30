@@ -1,8 +1,8 @@
 "use client";
 
-import type { TimelineDto } from "@/lib/timeline/dto";
-import type { HederaNetwork } from "@/lib/wallet/hip820";
-import { newestFirst } from "@/lib/timeline/order";
+import type { TimelineDto } from "@/lib/cargo/timeline/dto";
+import type { HederaNetwork } from "@/lib/hedera/wallet/hip820";
+import { newestFirst } from "@/lib/cargo/timeline/order";
 import { EventCard } from "./event-card";
 import { ParcelSummary } from "./parcel-summary";
 import { useVerification } from "./use-verification";
