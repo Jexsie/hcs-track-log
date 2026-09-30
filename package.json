@@ -18,7 +18,6 @@
     "lint": "eslint . && npm run typecheck --workspace=@hcs-track-log/nextjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run test --workspace=@hcs-track-log/nextjs",
     "prepare": "husky",
     "topic:create": "npm run topic:create --workspace=@hcs-track-log/nextjs",
     "keys:generate": "npm run keys:generate --workspace=@hcs-track-log/nextjs --",

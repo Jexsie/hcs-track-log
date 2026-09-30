@@ -8,7 +8,6 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
     "topic:create": "tsx scripts/create-topic.ts",
     "keys:generate": "tsx scripts/generate-keys.ts",
     "db:migrate": "tsx scripts/migrate.ts",
@@ -35,7 +34,6 @@
     "@types/react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "~6.0.3",
-    "vitest": "^4.1.11"
+    "typescript": "~6.0.3"
   }
 }

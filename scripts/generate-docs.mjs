@@ -17,7 +17,6 @@ const SCRIPT_DESCRIPTIONS = {
   lint: "ESLint, then `tsc --noEmit`",
   format: "Format everything with Prettier",
   "format:check": "Check formatting without writing (used by CI and hooks)",
-  test: "Vitest `unit` + `db` projects; the `db` project needs Postgres",
   prepare: "Installs the husky pre-commit hook (runs on `npm install`)",
   "topic:create": "Create the topic with threshold admin + submit keys and verify them on-chain",
   "keys:generate":
@@ -48,11 +47,6 @@ const ENV_META = {
     "Default `https://<network>.mirrornode.hedera.com`.",
   ],
   DATABASE_URL: ["Yes", "server, db:migrate, db:seed, verify", ""],
-  TEST_DATABASE_URL: [
-    "No",
-    "tests",
-    "Default `postgres://hcs:hcs@localhost:5432/hcs_track_log_test`.",
-  ],
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ["For the staff portal", "staff portal (browser)", ""],
   ADMIN_SESSION_SECRET: ["For the staff portal", "server", ""],
   HCS_APPROVAL_WINDOW_HOURS: ["No", "server", "Default `24`."],

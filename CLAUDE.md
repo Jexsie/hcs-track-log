@@ -18,6 +18,5 @@
 
 ## Commands
 - Build: `npm run next:build`
-- Test: `npm run test`
 - Lint: `npm run lint`
 - Verify CLI: `npm run verify -- --topic <id>`

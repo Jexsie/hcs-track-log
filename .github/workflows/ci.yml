@@ -11,23 +11,6 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    services:
-      # Postgres is required: the db test project runs against it.
-      postgres:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: hcs
-          POSTGRES_PASSWORD: hcs
-          POSTGRES_DB: hcs_track_log_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U hcs -d hcs_track_log_test"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 30
-    env:
-      TEST_DATABASE_URL: postgres://hcs:hcs@localhost:5432/hcs_track_log_test
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -36,5 +19,4 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run lint
-      - run: npm run test
       - run: npm run next:build

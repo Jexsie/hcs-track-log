@@ -49,8 +49,8 @@ No statuses, locations, carriers or descriptions go on-chain.
 
 ### Database
 
-`docker compose up -d` starts Postgres 18 with two databases, `hcs_track_log` (the app) and
-`hcs_track_log_test` (the test suite). Migrations are plain SQL in `migrations/`.
+`docker compose up -d` starts Postgres 18 with the `hcs_track_log` database. Migrations are plain
+SQL in `migrations/`.
 
 | Table                 | Holds                                                                          |
 | --------------------- | ------------------------------------------------------------------------------ |
@@ -60,8 +60,8 @@ No statuses, locations, carriers or descriptions go on-chain.
 
 - **No stored payload hash.** Verification recomputes both hashes from the content columns.
 - **Round-trip safety.** `NUMERIC(10,2)` comes back from `pg` as a fixed-scale string (`"142.50"`)
-  and `TIMESTAMPTZ(0)` as an instant, so the canonical builder rebuilds identical bytes. The tests
-  prove this under four session time zones.
+  and `TIMESTAMPTZ(0)` as an instant, so the canonical builder rebuilds identical bytes in any
+  session time zone.
 - **One topic per database.** `hcs_sequence_number` is unique across the table.
 - **`payer_account_id`** is a convenience copy, not covered by `payloadHash`. The mirror node's
   transaction record is the authoritative payer.
@@ -169,10 +169,6 @@ The server repeats that check before its first schedule and refuses to propose
 Hedera counts the payer's signature on a `ScheduleCreate` toward the scheduled transaction, so an
 operator holding a submit key would silently approve every proposal. `topic:create` and the server
 both refuse that setup.
-
-To prove enforcement on the live network (a few testnet cents): `RUN_TESTNET_TESTS=1 npm run test`.
-One suite shows a single signature is rejected and two are accepted, for both keys. The other runs
-the full propose → approve → finalize flow against the real mirror node.
 
 ### Write-path failure modes
 

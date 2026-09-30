@@ -152,7 +152,6 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 | `HCS_ADMIN_SIGNER_KEYS`                | topic:create only    | topic:create                         | Admin private keys, used ONLY by `npm run topic:create`. Remove them from the server afterwards.                                                                                                   |
 | `MIRROR_NODE_URL`                      | No                   | server, browser verification, verify | Default `https://<network>.mirrornode.hedera.com`.                                                                                                                                                 |
 | `DATABASE_URL`                         | Yes                  | server, db:migrate, db:seed, verify  | Matches docker-compose.yml defaults.                                                                                                                                                               |
-| `TEST_DATABASE_URL`                    | No                   | tests                                | Used by `npm run test`. Its schema is DROPPED on every run; the name must end in _test. Default `postgres://hcs:hcs@localhost:5432/hcs_track_log_test`.                                            |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | For the staff portal | staff portal (browser)               | WalletConnect Cloud project id from https://dashboard.reown.com (32 hex characters).                                                                                                               |
 | `ADMIN_SESSION_SECRET`                 | For the staff portal | server                               | HMAC key for sign-in challenges and admin session cookies. Generate: openssl rand -hex 32.                                                                                                         |
 | `HCS_APPROVAL_WINDOW_HOURS`            | No                   | server                               | How long a proposal waits for wallet approvals, in hours (1..1488; Hedera allows up to 62 days). Default `24`.                                                                                     |
@@ -171,7 +170,6 @@ All variables live in `.env` at the repository root. `.env.example` holds placeh
 | `npm run lint`          | `eslint . && npm run typecheck --workspace=@hcs-track-log/nextjs`                        | ESLint, then `tsc --noEmit`                                                                                    |
 | `npm run format`        | `prettier --write .`                                                                     | Format everything with Prettier                                                                                |
 | `npm run format:check`  | `prettier --check .`                                                                     | Check formatting without writing (used by CI and hooks)                                                        |
-| `npm run test`          | `vitest run`                                                                             | Vitest `unit` + `db` projects; the `db` project needs Postgres                                                 |
 | `npm run prepare`       | `husky`                                                                                  | Installs the husky pre-commit hook (runs on `npm install`)                                                     |
 | `npm run topic:create`  | `tsx scripts/create-topic.ts`                                                            | Create the topic with threshold admin + submit keys and verify them on-chain                                   |
 | `npm run keys:generate` | `tsx scripts/generate-keys.ts`                                                           | Print throwaway submit/admin key sets for local testing (`-- --submit 2/3 --admin 2/3`)                        |
@@ -200,15 +198,11 @@ packages/nextjs/
   scripts/        topic:create, keys:generate, db:migrate, db:seed, verify
 ```
 
-## Testing
+## See tamper detection
 
-```bash
-npm run test                       # unit tests + Postgres tests (needs docker compose up -d)
-RUN_TESTNET_TESTS=1 npm run test   # also prove the threshold keys and approval flow on testnet
-```
-
-The headline test is `packages/nextjs/lib/verify/tamper.db.test.ts`: it edits one field in Postgres
-and checks that exactly that record is flagged.
+Change any hashed column of a cached record directly in Postgres, then search it at `/` or run
+`npm run verify`. That record, and only that record, is flagged as changed. Put the old value back
+and it verifies again.
 
 ## Further documentation
 

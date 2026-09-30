@@ -63,10 +63,6 @@
         "description": ".env. Postgres connection string (required). docker-compose.yml default: postgres://hcs:hcs@localhost:5432/hcs_track_log."
       },
       {
-        "key": "TEST_DATABASE_URL",
-        "description": ".env. Test database for `npm run test`; its schema is dropped on every run and its name must end in _test (default postgres://hcs:hcs@localhost:5432/hcs_track_log_test)."
-      },
-      {
         "key": "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
         "description": ".env. WalletConnect Cloud project id (from dashboard.reown.com) for connecting administrators' Hedera wallets."
       },
