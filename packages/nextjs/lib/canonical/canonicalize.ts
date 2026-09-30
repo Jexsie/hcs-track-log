@@ -13,14 +13,19 @@ const byCodeUnit = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 function serialize(value: CanonicalValue): string {
   if (typeof value === "string") return JSON.stringify(value);
+
   if (typeof value === "number") {
-    if (!Number.isSafeInteger(value))
+    if (!Number.isSafeInteger(value)) {
       throw new TypeError("canonical numbers must be safe integers");
+    }
+
     return String(value);
   }
+
   const members = Object.keys(value)
     .sort(byCodeUnit)
     .map((key) => `${JSON.stringify(key)}:${serialize(value[key] as CanonicalValue)}`);
+
   return `{${members.join(",")}}`;
 }
 

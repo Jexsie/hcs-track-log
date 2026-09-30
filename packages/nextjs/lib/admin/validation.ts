@@ -47,7 +47,9 @@ export type FormErrors<F> = Partial<Record<keyof F, string>>;
 
 function normalizeLocalTimestamp(value: unknown): string {
   const utc = typeof value === "string" ? localInputToUtc(value) : null;
+
   if (!utc) throw new FieldError("is required: pick a date and time");
+
   return utc;
 }
 
@@ -89,6 +91,7 @@ function validate<F extends object>(
   rules: Record<keyof F, (v: unknown) => unknown>,
 ): FormErrors<F> {
   const errors: FormErrors<F> = {};
+
   for (const key of Object.keys(rules) as (keyof F)[]) {
     try {
       rules[key](form[key]);
@@ -96,9 +99,11 @@ function validate<F extends object>(
       if (!(error instanceof FieldError)) throw error;
       const empty = typeof form[key] !== "string" || String(form[key]).trim() === "";
       const field = key as keyof ParcelForm | keyof EventForm;
+
       errors[key] = empty && field !== "timestamp" ? "Required" : friendlyMessage(field);
     }
   }
+
   return errors;
 }
 

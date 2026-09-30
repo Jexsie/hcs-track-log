@@ -19,12 +19,14 @@ function parseSpec(spec: string, role: string): { threshold: number; count: numb
   const match = /^(\d+)\/(\d+)$/.exec(spec);
   const threshold = Number(match?.[1]);
   const count = Number(match?.[2]);
+
   if (!match || threshold < 2 || threshold > count) {
     console.error(
       `❌ --${role} must be THRESHOLD/COUNT with 2 <= threshold <= count, got "${spec}"`,
     );
     process.exit(1);
   }
+
   return { threshold, count };
 }
 
@@ -32,6 +34,7 @@ function printRole(role: "submit" | "admin", spec: string, purpose: string): voi
   const { threshold, count } = parseSpec(spec, role);
   const prefix = `HCS_${role.toUpperCase()}`;
   const keys = Array.from({ length: count }, () => PrivateKey.generateED25519());
+
   console.log(`\n# ${role} key: ${threshold}-of-${count}, ${purpose}`);
   console.log(`${prefix}_PUBLIC_KEYS=${keys.map((k) => k.publicKey.toStringDer()).join(",")}`);
   console.log(`${prefix}_THRESHOLD=${threshold}`);
@@ -41,6 +44,7 @@ function printRole(role: "submit" | "admin", spec: string, purpose: string): voi
       .map((k) => k.toStringDer())
       .join(",")}`,
   );
+
   if (count > threshold) {
     console.log(`# Spare ${role} private keys (store offline):`);
     for (const k of keys.slice(threshold)) console.log(`# ${k.toStringDer()}`);

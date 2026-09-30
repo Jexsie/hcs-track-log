@@ -12,6 +12,7 @@ let mirror: ReturnType<typeof createMirrorClient>;
 
 async function anchor(content: unknown, forParcel = parcelHash): Promise<bigint> {
   const payloadHash = await computePayloadHash(content);
+
   return (
     await ledger.submit(serializeEnvelope(buildEnvelope({ parcelHash: forParcel, payloadHash })))
   ).sequenceNumber;
@@ -30,6 +31,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: seq, content: referenceEvent },
       mirror,
     );
+
     expect(verdict).toMatchObject({
       status: "verified",
       sequenceNumber: seq,
@@ -46,6 +48,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       location: "Kampala Hub, Uganda ",
       timestamp: new Date("2026-09-25T11:40:00Z"),
     };
+
     expect(
       (await verifyEvent(parcelHash, { hcsSequenceNumber: seq, content: fromDb }, mirror)).status,
     ).toBe("verified");
@@ -64,6 +67,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: seq, content: tampered },
       mirror,
     );
+
     expect(verdict).toMatchObject({
       status: "tampered",
       reason: "content-mismatch",
@@ -79,6 +83,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: seq, content: referenceEvent },
       mirror,
     );
+
     expect(verdict).toMatchObject({ status: "tampered", reason: "wrong-parcel" });
   });
 
@@ -89,6 +94,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: seq, content: { ...referenceEvent, status: "" } },
       mirror,
     );
+
     expect(verdict).toMatchObject({
       status: "tampered",
       reason: "invalid-content",
@@ -103,6 +109,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: 1n, content: referenceEvent },
       mirror,
     );
+
     expect(verdict).toMatchObject({ status: "tampered", reason: "not-an-envelope" });
   });
 
@@ -112,6 +119,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: 42n, content: referenceEvent },
       mirror,
     );
+
     expect(verdict).toMatchObject({ status: "tampered", reason: "no-anchor", sequenceNumber: 42n });
   });
 
@@ -126,6 +134,7 @@ describe("verifyEvent — recompute, never retrieve", () => {
       { hcsSequenceNumber: 1n, content: referenceEvent },
       down,
     );
+
     expect(verdict.status).toBe("unavailable");
   });
 });

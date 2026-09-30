@@ -24,6 +24,7 @@ describe("readJsonBody", () => {
 describe("jsonResponse", () => {
   it("serializes bigint sequence numbers as strings", async () => {
     const res = jsonResponse({ seq: 9007199254740993n }, 201);
+
     expect(res.status).toBe(201);
     expect(await res.text()).toBe('{"seq":"9007199254740993"}');
   });
@@ -47,6 +48,7 @@ describe("errorResponse", () => {
     [new Error("boom"), 500, "INTERNAL_ERROR"],
   ])("maps %s to %i", async (error, status, code) => {
     const res = errorResponse(error, quiet);
+
     expect(res.status).toBe(status);
     expect((await body(res)).error.code).toBe(code);
   });
@@ -56,6 +58,7 @@ describe("errorResponse", () => {
       new ValidationError("carrier.scacCode", "must be 2–4 letters"),
       quiet,
     );
+
     expect((await body(res)).error).toMatchObject({
       path: "carrier.scacCode",
       message: "carrier.scacCode must be 2–4 letters",
@@ -67,6 +70,7 @@ describe("errorResponse", () => {
       new SubmissionFailedError(new ConfigError("HEDERA_OPERATOR_KEY is not valid")),
       quiet,
     );
+
     expect(JSON.stringify(await body(res))).not.toContain("HEDERA_OPERATOR_KEY");
   });
 
@@ -77,6 +81,7 @@ describe("errorResponse", () => {
       new DerivedWriteError(pending, null, new Error("db down")),
       (...args) => logged.push(args),
     );
+
     expect(res.status).toBe(500);
     expect((await body(res)).error).toMatchObject({
       code: "CACHE_WRITE_FAILED",
@@ -85,6 +90,7 @@ describe("errorResponse", () => {
     const serialized = JSON.stringify(logged, (_k, v: unknown) =>
       typeof v === "bigint" ? v.toString() : v,
     );
+
     expect(serialized).toContain("Kampala Hub, Uganda");
   });
 });
@@ -93,6 +99,7 @@ describe("serializeForLog", () => {
   it("keeps error messages, causes and bigints", () => {
     const error = new SubmissionFailedError(new ConfigError("HCS_TOPIC_ID is not set"));
     const out = serializeForLog({ error, seq: 5n });
+
     expect(out).toContain("HCS_TOPIC_ID is not set");
     expect(out).toContain('"seq":"5"');
   });

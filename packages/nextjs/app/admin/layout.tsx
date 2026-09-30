@@ -38,6 +38,7 @@ function readConfig(): AdminConfig | null {
 /** Violet-themed console. Every write is proposed here and approved in administrators' wallets. */
 export default function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
   const config = readConfig();
+
   return (
     <div data-theme="admin" className="min-h-dvh bg-bg text-fg">
       <header className="bg-band text-band-fg">

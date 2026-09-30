@@ -12,6 +12,7 @@ export function newestFirst<E extends { hcsSequenceNumber: string }, V>(
     .sort((a, b) => {
       const x = BigInt(a.event.hcsSequenceNumber);
       const y = BigInt(b.event.hcsSequenceNumber);
+
       return x === y ? 0 : x < y ? 1 : -1;
     });
 }

@@ -21,6 +21,7 @@ export class ControlledSubmitter implements EnvelopeSubmitter {
   submit(message: Uint8Array): Promise<SubmissionReceipt> {
     this.log.push("submit:start");
     this.messages.push(message);
+
     return new Promise((resolve, reject) => {
       this.pending = { resolve, reject };
     });
@@ -32,6 +33,7 @@ export class ControlledSubmitter implements EnvelopeSubmitter {
 
   succeed(): void {
     const sequenceNumber = this.nextSequence++;
+
     this.log.push("submit:ok");
     this.take().resolve({
       sequenceNumber,
@@ -48,7 +50,9 @@ export class ControlledSubmitter implements EnvelopeSubmitter {
   private take() {
     if (!this.pending) throw new Error("no submission in flight");
     const p = this.pending;
+
     this.pending = null;
+
     return p;
   }
 }
@@ -64,8 +68,10 @@ export class InstantSubmitter extends ControlledSubmitter {
 
   override submit(message: Uint8Array): Promise<SubmissionReceipt> {
     const result = super.submit(message);
+
     if (this.outcome === "ok") this.succeed();
     else this.fail(this.outcome);
+
     return result;
   }
 }

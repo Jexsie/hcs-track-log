@@ -3,6 +3,7 @@ const SHA256_HEX = /^[0-9a-f]{64}$/;
 /** Lower-case hex SHA-256 via WebCrypto, so it runs identically in Node and the browser. */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>);
+
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -18,5 +19,6 @@ export function isSha256Hex(value: unknown): value is string {
  */
 export function parseTrackingId(raw: string): string | null {
   const value = raw.trim();
+
   return isSha256Hex(value) ? value : null;
 }

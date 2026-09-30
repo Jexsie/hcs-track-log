@@ -7,9 +7,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
  */
 export function localInputToUtc(value: string): string | null {
   const m = LOCAL.exec(value.trim());
+
   if (!m) return null;
   const [, y, mo, d, h, mi, s = "0"] = m;
   const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+
   return Number.isNaN(date.getTime()) ? null : `${date.toISOString().slice(0, 19)}Z`;
 }
 

@@ -22,9 +22,12 @@ export function decodeSignatureMap(bytes: Uint8Array): SignaturePair[] {
   return repeatedBytesField(bytes, 1).flatMap((pair): SignaturePair[] => {
     const publicKey = optionalBytesField(pair, 1) ?? new Uint8Array();
     const ed25519 = optionalBytesField(pair, 3);
+
     if (ed25519) return [{ publicKey, type: "ed25519", signature: ed25519 }];
     const ecdsa = optionalBytesField(pair, 6);
+
     if (ecdsa) return [{ publicKey, type: "ecdsa-secp256k1", signature: ecdsa }];
+
     return []; // contract / RSA / ECDSA-384 signatures are not used by wallets here
   });
 }
@@ -41,9 +44,11 @@ const MAX_KEY_DEPTH = 8;
 export function decodeKey(bytes: Uint8Array, depth = 0): DecodedKey {
   if (depth > MAX_KEY_DEPTH) throw new ProtoDecodeError("key nesting too deep");
   const field = readFields(bytes).find((f) => f.bytes !== undefined);
+
   if (!field?.bytes) return { kind: "unsupported" };
   const list = (keyListBytes: Uint8Array) =>
     repeatedBytesField(keyListBytes, 1).map((k) => decodeKey(k, depth + 1));
+
   switch (field.number) {
     case 2:
       return { kind: "ed25519", publicKey: field.bytes };
@@ -75,10 +80,13 @@ export function decodeScheduledTopicMessage(
   schedulableBody: Uint8Array,
 ): ScheduledTopicMessage | null {
   const submit = optionalBytesField(schedulableBody, 21);
+
   if (!submit) return null;
   const topic = optionalBytesField(submit, 1);
   const message = optionalBytesField(submit, 2) ?? new Uint8Array();
+
   if (!topic) throw new ProtoDecodeError("scheduled topic message has no topic");
   const part = (n: number) => (varintField(topic, n) ?? 0n).toString();
+
   return { topicId: `${part(1)}.${part(2)}.${part(3)}`, message };
 }

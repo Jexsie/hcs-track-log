@@ -7,8 +7,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
  */
 export function formatUtc(iso: string): string {
   const ms = Date.parse(iso);
+
   if (Number.isNaN(ms)) return iso;
   const d = new Date(ms);
   const time = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${time} UTC`;
 }

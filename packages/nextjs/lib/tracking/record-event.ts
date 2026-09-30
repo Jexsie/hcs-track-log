@@ -19,15 +19,19 @@ export async function recordCargoEvent(
 ): Promise<RecordedEvent> {
   const parcelHash =
     typeof input.parcelHash === "string" ? parseTrackingId(input.parcelHash) : null;
+
   if (!parcelHash) throw new ValidationError("parcelHash", "must be a 64-character hex SHA-256");
   const event = prepareEvent(input.event);
+
   if (!(await store.parcelExists(parcelHash))) throw new ParcelNotFoundError(parcelHash);
 
   const recorded = await anchorEvent(parcelHash, event, submitter);
+
   try {
     await store.insertEvent(recorded);
   } catch (error) {
     throw new DerivedWriteError(recorded, null, error);
   }
+
   return recorded;
 }

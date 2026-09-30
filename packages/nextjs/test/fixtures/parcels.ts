@@ -8,6 +8,7 @@ export const normalizedReferenceParcel: Parcel = normalizeParcel(referenceParcel
 
 export async function parcelFixture(overrides: Partial<Parcel> = {}) {
   const parcel: Parcel = { ...normalizedReferenceParcel, ...overrides };
+
   return { parcel, parcelHash: await computeParcelHash(parcel) };
 }
 

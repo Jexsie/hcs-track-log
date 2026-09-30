@@ -45,17 +45,23 @@ async function readJson(request: Request): Promise<Record<string, unknown>> {
   if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
     throw new UnsupportedMediaError();
   }
+
   const body = await readJsonBody(request);
-  if (typeof body !== "object" || body === null || Array.isArray(body))
+
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new ValidationError("body", "must be a JSON object");
+  }
+
   return body as Record<string, unknown>;
 }
 
 function readCookie(request: Request, name: string): string | undefined {
   for (const part of (request.headers.get("cookie") ?? "").split(";")) {
     const [key, ...value] = part.trim().split("=");
+
     if (key === name) return value.join("=");
   }
+
   return undefined;
 }
 
@@ -95,12 +101,16 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
         415,
       );
     }
+
     if (error instanceof AuthError) {
       const status = error.code === "NOT_A_SUBMITTER" ? 403 : 401;
+
       return jsonResponse({ error: { code: error.code, message: error.message } }, status);
     }
+
     if (error instanceof MirrorRequestError || error instanceof MirrorNotFoundError) {
       deps.log?.("mirror node unavailable", error);
+
       return jsonResponse(
         {
           error: {
@@ -111,9 +121,11 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
         503,
       );
     }
+
     if (error instanceof SubmissionNotFoundError) {
       return jsonResponse({ error: { code: "SUBMISSION_NOT_FOUND", message: error.message } }, 404);
     }
+
     return errorResponse(error, deps.log);
   }
 
@@ -123,7 +135,9 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
       deps.secret(),
       deps.now(),
     );
+
     if (!identity) throw new AuthError("UNAUTHENTICATED", "sign in with an administrator wallet");
+
     return identity;
   }
 
@@ -141,10 +155,13 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
     /** POST /api/admin/auth/challenge { accountId } */
     challenge: handle(async (request) => {
       const { accountId } = await readJson(request);
+
       if (typeof accountId !== "string" || !ACCOUNT_ID.test(accountId)) {
         throw new ValidationError("accountId", "must look like 0.0.12345");
       }
+
       const domain = new URL(request.url).host;
+
       return jsonResponse(
         issueChallenge({ accountId, domain, secret: deps.secret(), now: deps.now() }),
         200,
@@ -157,6 +174,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
     /** POST /api/admin/auth/session { accountId, token, signatureMap } */
     createSession: handle(async (request) => {
       const { accountId, token, signatureMap } = await readJson(request);
+
       if (
         typeof accountId !== "string" ||
         typeof token !== "string" ||
@@ -164,6 +182,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
       ) {
         throw new AuthError("BAD_CHALLENGE", "accountId, token and signatureMap are required");
       }
+
       const identity = await signInWithWallet(
         { accountId, token, signatureMap },
         {
@@ -174,6 +193,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
         },
       );
       const session = issueSessionToken(identity, deps.secret(), deps.now());
+
       return jsonResponse({ accountId: identity.accountId }, 200, {
         "set-cookie": cookie(session, SESSION_MAX_AGE_SECONDS, deps.secureCookies),
       });
@@ -193,6 +213,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
     listSubmissions: handle(async (request) => {
       requireAdmin(request);
       const open = await deps.pending().listOpen();
+
       return jsonResponse({ submissions: open.map(toSubmissionDto) }, 200, {
         "cache-control": "no-store",
       });
@@ -210,6 +231,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
         now: deps.now,
       };
       let submission: PendingSubmission;
+
       if (body.kind === "register-parcel") {
         submission = await proposeRegistration(
           { parcel: body.parcel, firstEvent: body.firstEvent },
@@ -223,6 +245,7 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
       } else {
         throw new ValidationError("kind", 'must be "register-parcel" or "record-event"');
       }
+
       return jsonResponse({ submission: toSubmissionDto(submission) }, 201);
     }),
 
@@ -230,7 +253,9 @@ export function createAdminHandlers(deps: AdminHandlerDeps) {
     finalize: handle(async (request) => {
       requireAdmin(request);
       const { id } = await readJson(request);
+
       if (typeof id !== "string") throw new ValidationError("id", "must be a string");
+
       return jsonResponse(await finalizeSubmission(id, deps.finalizeDeps()), 200, {
         "cache-control": "no-store",
       });

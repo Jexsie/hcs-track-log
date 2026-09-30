@@ -53,6 +53,7 @@ export function normalizeParcel(input: unknown): Parcel {
   const consignment = readObject(parcel.consignment, "consignment", CONSIGNMENT_KEYS);
   const parties = readObject(parcel.parties, "parties", PARTIES_KEYS);
   const c = "consignment";
+
   return {
     consignment: {
       description: readField(consignment, c, "description", normalizeText),

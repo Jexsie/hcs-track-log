@@ -27,12 +27,15 @@ async function call<T>(
   fetchImpl: typeof fetch,
 ): Promise<ApiResult<T>> {
   let response: Response;
+
   try {
     response = await fetchImpl(url, { credentials: "same-origin", cache: "no-store", ...init });
   } catch {
     return { ok: false, status: 0, code: "NETWORK_ERROR", message: "Could not reach the server." };
   }
+
   let body: unknown;
+
   try {
     body = await response.json();
   } catch {
@@ -43,9 +46,11 @@ async function call<T>(
       message: `Unexpected response (${response.status}).`,
     };
   }
+
   if (response.ok) return { ok: true, data: body as T };
   const error =
     (body as { error?: { code?: unknown; message?: unknown; path?: unknown } }).error ?? {};
+
   return {
     ok: false,
     status: response.status,
@@ -108,6 +113,7 @@ export async function fetchParcelSummary(
   fetchImpl: typeof fetch = defaultFetch,
 ): Promise<ApiResult<ParcelSummary>> {
   const result = await lookupTimeline(parcelHash, fetchImpl);
+
   if (result.status === "not-found") {
     return {
       ok: false,
@@ -116,10 +122,14 @@ export async function fetchParcelSummary(
       message: "No shipment found with this tracking ID.",
     };
   }
-  if (result.status === "error")
+
+  if (result.status === "error") {
     return { ok: false, status: 0, code: "LOOKUP_FAILED", message: result.message };
+  }
+
   const { parcel, events } = result.timeline;
   const last = events.at(-1);
+
   return {
     ok: true,
     data: {

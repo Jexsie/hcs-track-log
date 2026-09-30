@@ -14,6 +14,7 @@ export async function lookupTimeline(
   fetchImpl: typeof fetch = defaultFetch,
 ): Promise<LookupResult> {
   let response: Response;
+
   try {
     response = await fetchImpl("/api/parcels/lookup", {
       method: "POST",
@@ -24,8 +25,10 @@ export async function lookupTimeline(
   } catch {
     return { status: "error", message: "Could not reach the server." };
   }
+
   if (response.status === 404) return { status: "not-found" };
   if (!response.ok) return { status: "error", message: `Lookup failed (${response.status}).` };
+
   try {
     return { status: "found", timeline: (await response.json()) as TimelineDto };
   } catch {

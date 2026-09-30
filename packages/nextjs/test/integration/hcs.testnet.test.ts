@@ -59,6 +59,7 @@ describe.skipIf(!enabled)("HCS topic with 2-of-3 submit and admin keys (testnet)
 
   it("the topic carries both threshold keys on-chain", async () => {
     const info = await new TopicInfoQuery().setTopicId(topicId).execute(client);
+
     expect(isSameThresholdKey(info.adminKey, adminKey)).toBe(true);
     expect(isSameThresholdKey(info.submitKey, submitKey)).toBe(true);
   }, 60_000);
@@ -70,6 +71,7 @@ describe.skipIf(!enabled)("HCS topic with 2-of-3 submit and admin keys (testnet)
       .freezeWith(client)
       .sign(lone);
     const response = await tx.execute(client);
+
     await expect(response.getReceipt(client)).rejects.toMatchObject({
       status: Status.InvalidSignature,
     });
@@ -83,6 +85,7 @@ describe.skipIf(!enabled)("HCS topic with 2-of-3 submit and admin keys (testnet)
       signers: [second, third],
     });
     const receipt = await submitter.submit(new TextEncoder().encode("threshold-signed"));
+
     expect(receipt.sequenceNumber).toBeGreaterThanOrEqual(1n);
   }, 60_000);
 
@@ -93,6 +96,7 @@ describe.skipIf(!enabled)("HCS topic with 2-of-3 submit and admin keys (testnet)
       .freezeWith(client)
       .sign(admin1);
     const response = await tx.execute(client);
+
     await expect(response.getReceipt(client)).rejects.toMatchObject({
       status: Status.InvalidSignature,
     });
@@ -103,9 +107,11 @@ describe.skipIf(!enabled)("HCS topic with 2-of-3 submit and admin keys (testnet)
       .setTopicId(topicId)
       .setTopicMemo("updated by 2-of-3")
       .freezeWith(client);
+
     await tx.sign(admin2);
     await tx.sign(admin3);
     const receipt = await (await tx.execute(client)).getReceipt(client);
+
     expect(receipt.status).toBe(Status.Success);
   }, 60_000);
 });

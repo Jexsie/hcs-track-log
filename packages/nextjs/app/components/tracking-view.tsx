@@ -28,6 +28,7 @@ export function TrackingView({
     unavailable: 0,
     parcelTampered: verification.parcel?.status === "tampered",
   };
+
   for (const v of verification.events) if (v) counts[v.status]++;
   const stops = newestFirst(timeline.events, verification.events);
 

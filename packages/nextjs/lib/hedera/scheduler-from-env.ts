@@ -23,13 +23,16 @@ export async function createSchedulerFromEnv(
   const submitKey = parseThresholdKey(readKeyConfig("submit", env), "submit");
   const adminKey = parseThresholdKey(readKeyConfig("admin", env), "admin");
   const operator = readOperatorConfig(env);
+
   assertOperatorNotSubmitter(
     parsePrivateKey(operator.operatorKey, "HEDERA_OPERATOR_KEY").publicKey,
     submitKey,
   );
   const client = createClient(operator);
+
   try {
     await assertTopicKeys(client, topicId, { adminKey, submitKey });
+
     return new HcsScheduler({ client, topicId, approvalWindowMs: readApprovalWindowMs(env) });
   } catch (error) {
     client.close();

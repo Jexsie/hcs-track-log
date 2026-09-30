@@ -77,5 +77,6 @@ export function hederaAccountFromSession(
   const account = session.namespaces.hedera?.accounts
     ?.find((a) => a.startsWith(prefix))
     ?.slice(prefix.length);
+
   return account && /^\d+\.\d+\.\d+$/.test(account) ? account : null;
 }

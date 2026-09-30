@@ -39,14 +39,17 @@ export async function verifyEvent(
   });
 
   let recomputed: string;
+
   try {
     recomputed = await computePayloadHash(event.content);
   } catch (error) {
     if (!(error instanceof ValidationError)) throw error;
+
     return tampered("invalid-content", `stored content is invalid (${error.message})`, null);
   }
 
   let onChain;
+
   try {
     onChain = await mirror.getMessage(sequenceNumber);
   } catch (error) {
@@ -57,6 +60,7 @@ export async function verifyEvent(
         recomputed,
       );
     }
+
     return {
       ...base,
       status: "unavailable",
@@ -65,10 +69,12 @@ export async function verifyEvent(
   }
 
   let envelope;
+
   try {
     envelope = parseEnvelope(onChain.message);
   } catch (error) {
     if (!(error instanceof EnvelopeError)) throw error;
+
     return tampered(
       "not-an-envelope",
       `ledger message is not an event envelope (${error.message})`,
@@ -84,6 +90,7 @@ export async function verifyEvent(
       envelope.payloadHash,
     );
   }
+
   if (envelope.payloadHash !== recomputed) {
     return tampered(
       "content-mismatch",
@@ -92,6 +99,7 @@ export async function verifyEvent(
       envelope.payloadHash,
     );
   }
+
   return {
     ...base,
     status: "verified",

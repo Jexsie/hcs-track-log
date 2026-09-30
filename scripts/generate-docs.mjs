@@ -72,14 +72,20 @@ const cell = (text) => text.replaceAll("|", "\\|");
 // scripts
 const rootScripts = JSON.parse(read("package.json")).scripts;
 const workspaceScripts = JSON.parse(read("packages/nextjs/package.json")).scripts;
+
 const runs = (command) => {
   const m = /^npm run (\S+) --workspace=\S+/.exec(command);
+
   return m ? (workspaceScripts[m[1]] ?? command) : command;
 };
+
 const scripts = ["| Command | Runs | Description |", "| --- | --- | --- |"];
+
 for (const [name, command] of Object.entries(rootScripts)) {
-  if (!SCRIPT_DESCRIPTIONS[name])
+  if (!SCRIPT_DESCRIPTIONS[name]) {
     problems.push(`describe script "${name}" in scripts/generate-docs.mjs`);
+  }
+
   scripts.push(
     `| \`npm run ${name}\` | \`${cell(runs(command))}\` | ${SCRIPT_DESCRIPTIONS[name] ?? ""} |`,
   );
@@ -88,22 +94,28 @@ for (const [name, command] of Object.entries(rootScripts)) {
 // env: the comment block directly above each variable in .env.example
 const env = ["| Variable | Required | Used by | Description |", "| --- | --- | --- | --- |"];
 let comment = [];
+
 for (const line of read(".env.example").split("\n")) {
   if (line.startsWith("# ───") || line.trim() === "") {
     comment = [];
     continue;
   }
+
   if (line.startsWith("#")) {
     comment.push(line.slice(1).trim());
     continue;
   }
+
   const m = /^([A-Z_]+)=/.exec(line);
+
   if (!m) continue;
   const name = m[1];
   const meta = ENV_META[name];
+
   if (!meta) problems.push(`classify env var "${name}" in scripts/generate-docs.mjs`);
   const [required, usedBy, dflt] = meta ?? ["?", "?", ""];
   const text = comment.join(" ").replace(/\.?$/, comment.length ? "." : "");
+
   env.push(
     `| \`${name}\` | ${required} | ${usedBy} | ${cell([text, dflt].filter(Boolean).join(" "))} |`,
   );
@@ -117,6 +129,7 @@ const walk = (dir) =>
     statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)],
   );
 const routes = ["| Route | Methods | Access | Source |", "| --- | --- | --- | --- |"];
+
 for (const file of walk(apiDir)
   .filter((f) => f.endsWith("/route.ts"))
   .sort()) {
@@ -126,8 +139,11 @@ for (const file of walk(apiDir)
       /export (?:async function|const) (GET|POST|PUT|PATCH|DELETE)/g,
     ),
   ].map((m) => `\`${m[1]}\``);
-  if (!ROUTE_ACCESS[path])
+
+  if (!ROUTE_ACCESS[path]) {
     problems.push(`classify access for route "${path}" in scripts/generate-docs.mjs`);
+  }
+
   routes.push(
     `| \`${path}\` | ${methods.join(" ")} | ${ROUTE_ACCESS[path] ?? "?"} | \`${relative(join(ROOT, "packages/nextjs"), file)}\` |`,
   );
@@ -143,21 +159,28 @@ const TARGETS = [
   { file: "packages/nextjs/README.md", blocks: { routes } },
 ];
 const SOURCES = { scripts: "package.json", env: ".env.example", routes: "app/api/**/route.ts" };
+
 for (const { file, blocks } of TARGETS) {
   let readme = read(file);
+
   for (const [name, rows] of Object.entries(blocks)) {
     const pattern = new RegExp(
       `<!-- AUTO-GENERATED:${name} [\\s\\S]*?<!-- /AUTO-GENERATED:${name} -->`,
     );
+
     if (!pattern.test(readme)) {
       console.error(`❌ ${file} has no AUTO-GENERATED:${name} markers`);
       process.exit(1);
     }
+
     const block = `<!-- AUTO-GENERATED:${name} (from ${SOURCES[name]}; do not edit by hand) -->\n\n${rows.join("\n")}\n\n<!-- /AUTO-GENERATED:${name} -->`;
+
     readme = readme.replace(pattern, () => block);
   }
+
   writeFileSync(join(ROOT, file), readme);
 }
+
 console.log(
   `✅ README tables: ${scripts.length - 2} scripts · ${env.length - 2} env vars · ${routes.length - 2} routes`,
 );

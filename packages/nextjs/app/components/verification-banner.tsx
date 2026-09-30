@@ -31,6 +31,7 @@ function Banner({
   lead?: ReactNode;
 }) {
   const t = TONE[tone];
+
   return (
     <div
       className={`sticky top-3 z-10 flex items-center gap-3 overflow-hidden rounded-xl px-4 py-3 shadow-[0_6px_24px_rgb(0_0_0/0.08)] ${t.box}`}
@@ -88,6 +89,7 @@ export function VerificationBanner({
       </Banner>
     );
   }
+
   if (error) {
     return (
       <Banner tone="unavailable" alert action={<RetryButton onRetry={onRetry} />}>
@@ -95,6 +97,7 @@ export function VerificationBanner({
       </Banner>
     );
   }
+
   if (counts.tampered > 0 || counts.parcelTampered) {
     return (
       <Banner tone="tampered" alert>
@@ -102,6 +105,7 @@ export function VerificationBanner({
       </Banner>
     );
   }
+
   if (counts.unavailable > 0) {
     return (
       <Banner tone="unavailable" action={<RetryButton onRetry={onRetry} />}>
@@ -109,5 +113,6 @@ export function VerificationBanner({
       </Banner>
     );
   }
+
   return <Banner tone="verified">All updates verified</Banner>;
 }

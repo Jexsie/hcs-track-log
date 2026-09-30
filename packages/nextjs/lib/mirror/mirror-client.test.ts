@@ -7,7 +7,9 @@ const encode = (s: string) => new TextEncoder().encode(s);
 
 function ledgerWith(count: number): FakeLedger {
   const ledger = new FakeLedger();
+
   for (let i = 1; i <= count; i++) ledger.append(`message-${i}`);
+
   return ledger;
 }
 
@@ -20,6 +22,7 @@ describe("getMessage", () => {
       fetch: ledger.fetch,
     });
     const msg = await mirror.getMessage(2n);
+
     expect(ledger.requests).toEqual([`/api/v1/topics/${FAKE_TOPIC}/messages/2`]);
     expect(msg).toMatchObject({
       topicId: FAKE_TOPIC,
@@ -31,12 +34,14 @@ describe("getMessage", () => {
 
   it("decodes non-ASCII payloads byte-exactly", async () => {
     const ledger = new FakeLedger();
+
     ledger.append("Café ✓");
     const mirror = createMirrorClient({
       baseUrl: FAKE_MIRROR,
       topicId: FAKE_TOPIC,
       fetch: ledger.fetch,
     });
+
     expect(new TextDecoder().decode((await mirror.getMessage(1n)).message)).toBe("Café ✓");
   });
 
@@ -46,6 +51,7 @@ describe("getMessage", () => {
       topicId: FAKE_TOPIC,
       fetch: ledgerWith(1).fetch,
     });
+
     await expect(mirror.getMessage(9n)).rejects.toThrow(MirrorNotFoundError);
   });
 
@@ -59,18 +65,21 @@ describe("getMessage", () => {
       async () => Response.json({ ...validBody(), topic_id: "0.0.9999" }),
       async () => new Response("<html>", { status: 200 }),
     ];
+
     for (const fetchImpl of cases) {
       const mirror = createMirrorClient({
         baseUrl: FAKE_MIRROR,
         topicId: FAKE_TOPIC,
         fetch: fetchImpl,
       });
+
       await expect(mirror.getMessage(1n)).rejects.toThrow(MirrorRequestError);
     }
   });
 
   it("builds the public message URL (trailing slash tolerated)", () => {
     const mirror = createMirrorClient({ baseUrl: `${FAKE_MIRROR}/`, topicId: FAKE_TOPIC });
+
     expect(mirror.messageUrl(7n)).toBe(`${FAKE_MIRROR}/api/v1/topics/${FAKE_TOPIC}/messages/7`);
   });
 });
@@ -84,6 +93,7 @@ describe("getMessageAt", () => {
       fetch: ledger.fetch,
     });
     const at = ledger.entries[1]?.consensusTimestamp ?? "";
+
     expect((await mirror.getMessageAt(at))?.sequenceNumber).toBe(2n);
     expect(ledger.requests.at(-1)).toBe(
       `/api/v1/topics/${FAKE_TOPIC}/messages?timestamp=eq:${at}&limit=1`,
@@ -101,6 +111,7 @@ describe("listMessages (pagination)", () => {
       fetch: ledger.fetch,
     });
     const seqs: bigint[] = [];
+
     for await (const m of mirror.listMessages({ limit: 2 })) seqs.push(m.sequenceNumber);
     expect(seqs).toEqual([1n, 2n, 3n, 4n, 5n]);
     expect(ledger.requests).toHaveLength(3);
@@ -114,6 +125,7 @@ describe("listMessages (pagination)", () => {
       fetch: ledgerWith(0).fetch,
     });
     const all = [];
+
     for await (const m of mirror.listMessages()) all.push(m);
     expect(all).toEqual([]);
   });
@@ -129,11 +141,13 @@ describe("listMessages (pagination)", () => {
       topicId: FAKE_TOPIC,
       fetch: fetchImpl,
     });
+
     const iterate = async () => {
       for await (const _ of mirror.listMessages()) {
         /* drain */
       }
     };
+
     await expect(iterate()).rejects.toThrow("another origin");
   });
 });

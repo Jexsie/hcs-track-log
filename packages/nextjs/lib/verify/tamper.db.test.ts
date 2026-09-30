@@ -18,6 +18,7 @@ import { verifyTimeline } from "./verify-timeline";
 const pool = createTestPool();
 const store = new PostgresTrackingStore(pool);
 const reader = new PostgresTrackingReader(pool);
+
 afterAll(() => pool.end());
 
 const { createdAt: _createdAt, ...parcelForm } = referenceParcel;
@@ -32,8 +33,10 @@ let parcelHash: string;
 
 async function verifyFromPostgres() {
   const parcel = await reader.findParcel(parcelHash);
+
   if (!parcel) throw new Error("parcel missing");
   const events = await reader.listEvents(parcelHash);
+
   return verifyTimeline({
     parcelHash,
     parcel: parcel.content,
@@ -46,17 +49,21 @@ beforeEach(async () => {
   await truncateAll(pool);
   ledger = new FakeLedger();
   const [first, ...rest] = JOURNEY.map((j) => ({ ...referenceEvent, ...j }));
+
   ({ parcelHash } = await registerParcel(
     { parcel: parcelForm, firstEvent: first },
     { submitter: ledger, store },
   ));
-  for (const event of rest)
+
+  for (const event of rest) {
     await recordCargoEvent({ parcelHash, event }, { submitter: ledger, store });
+  }
 });
 
 describe("tamper detection via recomputation", () => {
   it("verifies every event of an untouched parcel", async () => {
     const report = await verifyFromPostgres();
+
     expect(report.parcel.status).toBe("verified");
     expect(report.events.map((e) => e.status)).toEqual(["verified", "verified", "verified"]);
   });
@@ -65,6 +72,7 @@ describe("tamper detection via recomputation", () => {
     const edit = await pool.query(
       "UPDATE cargo_events SET location = 'Nairobi Depot, Kenya' WHERE hcs_sequence_number = 2",
     );
+
     expect(edit.rowCount).toBe(1);
 
     const report = await verifyFromPostgres();
@@ -88,6 +96,7 @@ describe("tamper detection via recomputation", () => {
       parcelHash,
     ]);
     const report = await verifyFromPostgres();
+
     expect(report.parcel).toMatchObject({ status: "tampered", reason: "content-mismatch" });
     expect(report.events.every((e) => e.status === "verified")).toBe(true);
   });
@@ -97,6 +106,7 @@ describe("tamper detection via recomputation", () => {
       "UPDATE cargo_events SET hcs_sequence_number = 99 WHERE hcs_sequence_number = 3",
     );
     const report = await verifyFromPostgres();
+
     expect(report.events[2]).toMatchObject({
       status: "tampered",
       reason: "no-anchor",
@@ -112,6 +122,7 @@ describe("tamper detection via recomputation", () => {
       [parcelHash],
     );
     const report = await verifyFromPostgres();
+
     expect(report.events[3]).toMatchObject({ status: "tampered", reason: "no-anchor" });
   });
 });

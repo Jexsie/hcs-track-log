@@ -45,8 +45,10 @@ export async function prepareRegistration(
   if (typeof input.parcel !== "object" || input.parcel === null || Array.isArray(input.parcel)) {
     throw new ValidationError("parcel", "must be an object");
   }
+
   const parcel = normalizeParcel({ ...input.parcel, createdAt: toWholeSecond(now) });
   const event = prepareEvent(input.firstEvent);
+
   return { parcel, event, parcelHash: await computeParcelHash(parcel) };
 }
 
@@ -55,13 +57,16 @@ export async function registerParcel(
   { submitter, store, now = () => new Date() }: RegisterParcelDeps,
 ): Promise<RegisteredParcel> {
   const { parcel, event, parcelHash } = await prepareRegistration(input, now());
+
   if (await store.parcelExists(parcelHash)) throw new ParcelExistsError(parcelHash);
 
   const firstEvent = await anchorEvent(parcelHash, event, submitter);
+
   try {
     await store.insertParcelWithFirstEvent(parcel, firstEvent);
   } catch (error) {
     throw new DerivedWriteError(firstEvent, parcel, error);
   }
+
   return { parcelHash, parcel, firstEvent };
 }

@@ -41,6 +41,7 @@ describe.each(TIME_ZONES)("round-trip through Postgres (session TimeZone=%s)", (
   const pool = createTestPool({ timeZone });
   const store = new PostgresTrackingStore(pool);
   const reader = new PostgresTrackingReader(pool);
+
   afterAll(() => pool.end());
   beforeEach(() => truncateAll(pool));
 
@@ -56,6 +57,7 @@ describe.each(TIME_ZONES)("round-trip through Postgres (session TimeZone=%s)", (
     );
 
     const stored = await reader.findParcel(parcelHash);
+
     expect(stored).not.toBeNull();
     if (!stored) return;
     expect(text(buildParcelCanonical(stored.content))).toBe(text(buildParcelCanonical(parcel)));
@@ -71,12 +73,15 @@ describe.each(TIME_ZONES)("round-trip through Postgres (session TimeZone=%s)", (
       { submitter, store },
     );
     const input = { ...referenceEvent, location: " Café Kampala Hub́ ", timestamp };
+
     await recordCargoEvent({ parcelHash, event: input }, { submitter, store });
 
     const [, stored] = await reader.listEvents(parcelHash);
+
     expect(stored).toBeDefined();
     if (!stored) return;
     const expectedBytes = buildEventCanonical(input);
+
     expect(buildEventCanonical(stored.content)).toEqual(expectedBytes);
     expect(await computePayloadHash(stored.content)).toBe(await computePayloadHash(input));
   });
@@ -84,10 +89,12 @@ describe.each(TIME_ZONES)("round-trip through Postgres (session TimeZone=%s)", (
 
 describe("why fixed-scale decimals are required", () => {
   const pool = createTestPool();
+
   afterAll(() => pool.end());
 
   it("Postgres returns NUMERIC(10,2) as a fixed-scale string; JS number formatting would drift", async () => {
     const { rows } = await pool.query<{ v: string }>("SELECT 142.5::numeric(10,2) AS v");
+
     expect(rows[0]?.v).toBe("142.50");
     expect(String(Number(rows[0]?.v))).toBe("142.5"); // the drift our normalizer prevents
   });

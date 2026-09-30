@@ -24,7 +24,9 @@ function printParcel(parcelHash: string, report: TimelineReport): void {
     report.parcel.status === "verified"
       ? "✅ parcel content"
       : `⚠️  PARCEL TAMPERED: ${report.parcel.message}`;
+
   console.log(`\n${parcelHash}\n  ${parcelLine}`);
+
   for (const v of report.events) {
     const detail =
       v.status === "verified"
@@ -32,6 +34,7 @@ function printParcel(parcelHash: string, report: TimelineReport): void {
         : v.status === "tampered"
           ? `TAMPERED (${v.reason}): ${v.message}`
           : `unavailable: ${v.message}`;
+
     console.log(`  ${ICON[v.status]} seq ${v.sequenceNumber}  ${detail}`);
   }
 }
@@ -48,10 +51,12 @@ async function main(): Promise<number> {
   });
   const topicId = values.topic ?? readTopicId();
   const parcelHash = values.parcel === undefined ? undefined : parseTrackingId(values.parcel);
+
   if (parcelHash === null) throw new Error("--parcel must be a 64-character hex tracking ID");
 
   const mirror = createMirrorClient({ baseUrl: values.mirror ?? readMirrorNodeUrl(), topicId });
   const pool = createPool(readDatabaseUrl());
+
   try {
     console.log(
       `Verifying against topic ${topicId} (recomputing every hash from Postgres content)…`,
@@ -65,17 +70,23 @@ async function main(): Promise<number> {
       onScanProgress: (n) => console.log(`  …scanned ${n} ledger messages`),
     });
     const t = report.totals;
+
     console.log(
       `\n${t.parcels} parcels · ${t.verified} verified · ${t.tampered} tampered events · ` +
         `${t.tamperedParcels} tampered parcels · ${t.unavailable} unavailable`,
     );
-    if (report.uncached.length)
+
+    if (report.uncached.length) {
       console.log(
         `⚠️  on the ledger but missing from Postgres: seq ${report.uncached.join(", ")} ` +
           "(deleted from the database, or an approved change not finalized yet)",
       );
-    if (report.foreign.length)
+    }
+
+    if (report.foreign.length) {
       console.log(`ℹ️  non-envelope messages on topic: seq ${report.foreign.join(", ")}`);
+    }
+
     return verifyExitCode(report);
   } finally {
     await pool.end();

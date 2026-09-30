@@ -41,6 +41,7 @@ function getScheduler(): Promise<EnvelopeScheduler> {
     singletons.scheduler = undefined; // retry on the next request instead of caching the failure
     throw error;
   });
+
   return singletons.scheduler;
 }
 
@@ -48,6 +49,7 @@ export function getAdminHandlers() {
   const mirrorBaseUrl = readMirrorNodeUrl();
   const topicId = readTopicId();
   const pending = () => new PendingSubmissionStore(getPool());
+
   return createAdminHandlers({
     secret: readAdminSessionSecret,
     now: () => new Date(),

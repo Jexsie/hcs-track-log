@@ -41,6 +41,7 @@ async function main(): Promise<void> {
       },
       { submitter, store },
     );
+
     console.log(`Registered parcel ${parcelHash}`);
 
     for (const [status, location, hoursAgo] of [
@@ -52,8 +53,10 @@ async function main(): Promise<void> {
         { parcelHash, event: { status, location, carrier, timestamp: at(hoursAgo) } },
         { submitter, store },
       );
+
       console.log(`  ${status.padEnd(10)} → HCS sequence ${hcsSequenceNumber}`);
     }
+
     console.log(`\n✅ Search for this tracking ID:\n\n  ${parcelHash}\n`);
   } finally {
     submitter.close();

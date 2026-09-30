@@ -36,7 +36,9 @@ export class HcsEnvelopeSubmitter implements EnvelopeSubmitter {
       .setMessage(message)
       .setMaxChunks(1) // one envelope = one sequence number
       .freezeWith(client);
+
     for (const signer of signers) await tx.sign(signer);
+
     return tx;
   }
 
@@ -50,11 +52,15 @@ export class HcsEnvelopeSubmitter implements EnvelopeSubmitter {
     const tx = await this.prepare(message);
     const response = await tx.execute(client);
     const receipt = await response.getReceipt(client); // throws ReceiptStatusError on failure
+
     if (receipt.status !== Status.Success || receipt.topicSequenceNumber === null) {
       throw new Error(`topic message not accepted: ${receipt.status.toString()}`);
     }
+
     const payer = response.transactionId.accountId;
+
     if (!payer) throw new Error("transaction id has no payer account");
+
     return {
       sequenceNumber: BigInt(receipt.topicSequenceNumber.toString()),
       transactionId: response.transactionId.toString(),

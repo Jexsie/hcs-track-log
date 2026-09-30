@@ -17,6 +17,7 @@ function leafPaths(bytes: Uint8Array): string[] {
     typeof value === "object" && value !== null
       ? Object.entries(value).flatMap(([k, v]) => walk(v, prefix ? `${prefix}.${k}` : k))
       : [prefix];
+
   return walk(JSON.parse(new TextDecoder().decode(bytes)), "");
 }
 
@@ -45,11 +46,13 @@ describe("computePayloadHash", () => {
       computePayloadHash(reordered),
       computePayloadHash(referenceEvent),
     ]);
+
     expect(new Set(hashes).size).toBe(1);
   });
 
   it("differs for every event (status change → different hash)", async () => {
     const next = await computePayloadHash({ ...referenceEvent, status: "Delivered" });
+
     expect(next).not.toBe(REFERENCE_EVENT_SHA256);
   });
 });
@@ -62,6 +65,7 @@ describe("computeParcelHash", () => {
   it("gives identical cargo with a different bookingRef a different tracking ID", async () => {
     const a = await computeParcelHash(referenceParcel);
     const b = await computeParcelHash({ ...referenceParcel, bookingRef: "BK-2026-000185" });
+
     expect(isSha256Hex(a)).toBe(true);
     expect(isSha256Hex(b)).toBe(true);
     expect(a).not.toBe(b);
@@ -69,6 +73,7 @@ describe("computeParcelHash", () => {
 
   it("gives identical cargo created at a different time a different tracking ID", async () => {
     const b = await computeParcelHash({ ...referenceParcel, createdAt: "2026-09-20T08:15:01Z" });
+
     expect(b).not.toBe(REFERENCE_PARCEL_SHA256);
   });
 });
@@ -77,6 +82,7 @@ describe("hash field sets", () => {
   it("are disjoint: no field is committed by both parcelHash and payloadHash", () => {
     const eventFields = leafPaths(buildEventCanonical(referenceEvent));
     const parcelFields = leafPaths(buildParcelCanonical(referenceParcel));
+
     expect(eventFields.sort()).toEqual([
       "carrier.name",
       "carrier.scacCode",

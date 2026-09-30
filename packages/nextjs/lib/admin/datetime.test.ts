@@ -6,6 +6,7 @@ describe("datetime-local ⇄ canonical UTC", () => {
   it("interprets the input in the browser's time zone and returns canonical UTC", () => {
     const local = new Date(2026, 8, 25, 14, 40, 5); // what the admin sees on their clock
     const utc = localInputToUtc("2026-09-25T14:40:05");
+
     expect(utc).toBe(`${local.toISOString().slice(0, 19)}Z`);
     expect(normalizeTimestamp(utc)).toBe(utc); // already canonical
   });
@@ -23,6 +24,7 @@ describe("datetime-local ⇄ canonical UTC", () => {
 
   it("formats a Date for a datetime-local input, dropping milliseconds", () => {
     const d = new Date(2026, 0, 2, 3, 4, 5, 678);
+
     expect(toLocalInputValue(d)).toBe("2026-01-02T03:04:05");
     expect(localInputToUtc(toLocalInputValue(d))).toBe(
       `${new Date(2026, 0, 2, 3, 4, 5).toISOString().slice(0, 19)}Z`,

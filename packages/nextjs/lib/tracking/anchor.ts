@@ -21,11 +21,13 @@ export async function anchorEvent(
   const payloadHash = await computePayloadHash(event);
   const message = serializeEnvelope(buildEnvelope({ parcelHash, payloadHash }));
   let receipt;
+
   try {
     receipt = await submitter.submit(message);
   } catch (error) {
     throw new SubmissionFailedError(error);
   }
+
   return {
     parcelHash,
     event,

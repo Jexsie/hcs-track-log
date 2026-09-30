@@ -26,6 +26,7 @@ const txId = () => TransactionId.generate(AccountId.fromString("0.0.1001"));
 function signedParts(bytes: Uint8Array) {
   const transaction = messageField(bytes, 1);
   const signed = bytesField(transaction, 5);
+
   return { bodyBytes: bytesField(signed, 1), sigMap: bytesField(signed, 2) };
 }
 
@@ -39,19 +40,24 @@ describe("decodeSignatureMap", () => {
       .setNodeAccountIds(NODE)
       .setTransactionId(txId())
       .freeze();
+
     await tx.sign(ed);
     await tx.sign(ec);
 
     const { bodyBytes, sigMap } = signedParts(tx.toBytes());
     const pairs = decodeSignatureMap(sigMap);
+
     expect(pairs).toHaveLength(2);
+
     for (const pair of pairs) {
       const key =
         pair.type === "ed25519"
           ? PublicKey.fromBytesED25519(pair.publicKey)
           : PublicKey.fromBytesECDSA(pair.publicKey);
+
       expect(key.verify(bodyBytes, pair.signature)).toBe(true);
     }
+
     expect(pairs.map((p) => p.type).sort()).toEqual(["ecdsa-secp256k1", "ed25519"]);
   });
 
@@ -81,6 +87,7 @@ describe("decodeKey", () => {
     const submitKey = bytesField(bytesField(bodyBytes, 24), 3); // TransactionBody.consensusCreateTopic.submitKey
 
     const decoded = decodeKey(submitKey);
+
     expect(decoded.kind).toBe("threshold");
     if (decoded.kind !== "threshold") return;
     expect(decoded.threshold).toBe(2);
@@ -92,6 +99,7 @@ describe("decodeKey", () => {
     const raw = decoded.keys.map((k) =>
       "publicKey" in k ? Buffer.from(k.publicKey).toString("hex") : "",
     );
+
     expect(raw).toEqual(keys.map((k) => k.toStringRaw()));
   });
 });

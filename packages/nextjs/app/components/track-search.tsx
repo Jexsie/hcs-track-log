@@ -20,6 +20,7 @@ export function TrackSearch({ ledger }: { ledger: LedgerLinks | null }) {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trackingId = value.trim();
+
     if (!trackingId) return;
     setState({ status: "loading" });
     setState(await lookupTimeline(trackingId));

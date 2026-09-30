@@ -15,10 +15,13 @@ const HASH = "a".repeat(64);
 
 function recorder(response: () => Response) {
   const calls: { url: string; init: RequestInit | undefined }[] = [];
+
   const fetchImpl: typeof fetch = async (input, init) => {
     calls.push({ url: String(input), init });
+
     return response();
   };
+
   return { calls, fetchImpl };
 }
 
@@ -65,6 +68,7 @@ describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () =>
     ],
   ] as const)("%s POSTs JSON to its endpoint", async (_name, call, url, method, body) => {
     const { calls, fetchImpl } = recorder(() => Response.json({ ok: true }));
+
     await call(fetchImpl);
     expect(calls[0]?.url).toBe(url);
     expect(calls[0]?.init?.method).toBe(method);
@@ -76,6 +80,7 @@ describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () =>
 
   it("reads and ends the session with GET / DELETE", async () => {
     const { calls, fetchImpl } = recorder(() => Response.json({ accountId: "0.0.100" }));
+
     expect(await getSession(fetchImpl)).toEqual({ ok: true, data: { accountId: "0.0.100" } });
     await signOut(fetchImpl);
     expect(calls.map((c) => [c.url, c.init?.method])).toEqual([
@@ -86,6 +91,7 @@ describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () =>
 
   it("lists submissions", async () => {
     const { calls, fetchImpl } = recorder(() => Response.json({ submissions: [] }));
+
     expect(await listSubmissions(fetchImpl)).toEqual({ ok: true, data: { submissions: [] } });
     expect(calls[0]?.init?.method).toBe("GET");
   });
@@ -103,6 +109,7 @@ describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () =>
         { status: 400 },
       ),
     );
+
     expect(await proposeEvent({ parcelHash: HASH, event: {} }, fetchImpl)).toEqual({
       ok: false,
       status: 400,
@@ -113,6 +120,7 @@ describe("admin API client (cookie session, JSON bodies, no IDs in URLs)", () =>
     const down = await getSession(async () => {
       throw new TypeError("Failed to fetch");
     });
+
     expect(down).toMatchObject({ ok: false, status: 0, code: "NETWORK_ERROR" });
   });
 });
@@ -129,6 +137,7 @@ describe("fetchParcelSummary", () => {
         ],
       }),
     );
+
     expect(await fetchParcelSummary(HASH, fetchImpl)).toEqual({
       ok: true,
       data: {

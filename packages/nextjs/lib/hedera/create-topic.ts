@@ -43,7 +43,9 @@ export async function prepareCreateTopicTransaction(
     "admin",
   );
   const tx = buildCreateTopicTransaction(options).freezeWith(client);
+
   for (const signer of options.adminSigners) await tx.sign(signer);
+
   return tx;
 }
 
@@ -55,8 +57,10 @@ export async function createTrackingTopic(
   const tx = await prepareCreateTopicTransaction(client, options);
   const response = await tx.execute(client);
   const { topicId } = await response.getReceipt(client);
+
   if (!topicId) throw new Error("topic creation receipt did not include a topic id");
   await assertTopicKeys(client, topicId, options);
+
   return topicId;
 }
 
@@ -67,11 +71,13 @@ export async function assertTopicKeys(
   expected: TopicKeys,
 ): Promise<void> {
   const info = await new TopicInfoQuery().setTopicId(topicId).execute(client);
+
   if (!isSameThresholdKey(info.adminKey, expected.adminKey)) {
     throw new ThresholdKeyError(
       `topic ${topicId.toString()} does not have the configured threshold admin key`,
     );
   }
+
   if (!isSameThresholdKey(info.submitKey, expected.submitKey)) {
     throw new ThresholdKeyError(
       `topic ${topicId.toString()} does not enforce the configured threshold submit key`,

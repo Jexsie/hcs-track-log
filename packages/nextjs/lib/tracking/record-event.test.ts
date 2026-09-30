@@ -45,6 +45,7 @@ describe("recordCargoEvent — HCS-first", () => {
 
   it("writes nothing to Postgres when submission fails", async () => {
     const submitter = new InstantSubmitter(log, new Error("INVALID_SIGNATURE"));
+
     await expect(
       recordCargoEvent({ parcelHash, event: referenceEvent }, { submitter, store }),
     ).rejects.toThrow(SubmissionFailedError);
@@ -54,17 +55,23 @@ describe("recordCargoEvent — HCS-first", () => {
 
   it("submits only the blind envelope with the payloadHash of the normalized content", async () => {
     const submitter = new InstantSubmitter(log);
+
     await recordCargoEvent(
       { parcelHash, event: { ...referenceEvent, location: "  Kampala Hub, Uganda " } },
       { submitter, store },
     );
 
     const [message] = submitter.messages;
+
     expect(message).toBeDefined();
     const text = new TextDecoder().decode(message);
+
     expect(Object.keys(JSON.parse(text)).sort()).toEqual(["parcelHash", "payloadHash", "v"]);
-    for (const leak of ["Kampala", "In Transit", "MTN", "MTNL", "2026-09-25"])
+
+    for (const leak of ["Kampala", "In Transit", "MTN", "MTNL", "2026-09-25"]) {
       expect(text).not.toContain(leak);
+    }
+
     expect(parseEnvelope(text)).toEqual({
       v: 1,
       parcelHash,
@@ -81,6 +88,7 @@ describe("recordCargoEvent — HCS-first", () => {
       },
       { submitter, store },
     );
+
     expect(recorded.event).toEqual({
       ...referenceEvent,
       carrier: { name: "MTN Logistics", scacCode: "MTNL" },
@@ -89,6 +97,7 @@ describe("recordCargoEvent — HCS-first", () => {
 
   it("rejects invalid content before touching the ledger or the database", async () => {
     const submitter = new InstantSubmitter(log);
+
     await expect(
       recordCargoEvent(
         { parcelHash, event: { ...referenceEvent, status: "" } },
@@ -100,6 +109,7 @@ describe("recordCargoEvent — HCS-first", () => {
 
   it("rejects an unknown or malformed parcel before submitting", async () => {
     const submitter = new InstantSubmitter(log);
+
     await expect(
       recordCargoEvent({ parcelHash: "f".repeat(64), event: referenceEvent }, { submitter, store }),
     ).rejects.toThrow(ParcelNotFoundError);
@@ -116,6 +126,7 @@ describe("recordCargoEvent — HCS-first", () => {
       { parcelHash, event: referenceEvent },
       { submitter, store },
     ).catch((e: unknown) => e);
+
     expect(error).toBeInstanceOf(DerivedWriteError);
     expect((error as DerivedWriteError).hcsSequenceNumber).toBe(1n);
     expect((error as DerivedWriteError).pending.event).toEqual(referenceEvent);

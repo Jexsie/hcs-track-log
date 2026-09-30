@@ -19,6 +19,7 @@ export function ApprovalsList() {
   useEffect(() => {
     if (!adminAccountId) return;
     let cancelled = false;
+
     listSubmissions().then((result) => {
       if (cancelled) return;
       setState(
@@ -27,12 +28,14 @@ export function ApprovalsList() {
           : { status: "error", message: result.message },
       );
     });
+
     return () => {
       cancelled = true;
     };
   }, [adminAccountId, reload]);
 
   if (!sessionChecked) return <p className="m-0 text-muted">Loading…</p>;
+
   if (!adminAccountId) {
     return (
       <p className="m-0 rounded-xl border border-line bg-surface p-5 text-muted">

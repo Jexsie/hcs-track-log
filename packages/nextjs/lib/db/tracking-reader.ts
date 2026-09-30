@@ -20,6 +20,7 @@ export class PostgresTrackingReader {
       [parcelHash],
     );
     const [row] = rows;
+
     return row ? toStoredParcel(row) : null;
   }
 
@@ -27,6 +28,7 @@ export class PostgresTrackingReader {
     const { rows } = await this.pool.query<{ parcel_hash: string }>(
       "SELECT parcel_hash FROM parcels ORDER BY created_at, parcel_hash",
     );
+
     return rows.map((r) => r.parcel_hash);
   }
 
@@ -38,6 +40,7 @@ export class PostgresTrackingReader {
         ORDER BY hcs_sequence_number`,
       [parcelHash],
     );
+
     return rows.map(toStoredEvent);
   }
 }

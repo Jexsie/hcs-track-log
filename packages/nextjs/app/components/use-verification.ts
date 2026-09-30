@@ -41,6 +41,7 @@ export function useVerification(
         if (cancelled) return prev;
         const base: RunState =
           prev.run === run ? prev : { run, events: [], parcel: null, error: null };
+
         return { ...base, ...patch(base) };
       });
 
@@ -52,7 +53,9 @@ export function useVerification(
       onEvent: (verdict, index) =>
         update((s) => {
           const events = [...s.events];
+
           events[index] = verdict;
+
           return { events };
         }),
     })
@@ -69,5 +72,6 @@ export function useVerification(
   const retry = useCallback(() => setRun((n) => n + 1), []);
   const current = state.run === run ? state : { events: [], parcel: null, error: null };
   const done = current.error !== null || current.parcel !== null;
+
   return { ...current, done, retry };
 }

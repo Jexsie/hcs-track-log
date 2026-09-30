@@ -24,6 +24,7 @@ describe("buildParcelCanonical", () => {
       bookingRef: "BK-2026-000184",
       createdAt: new Date("2026-09-20T08:15:00.000Z"),
     };
+
     expect(buildParcelCanonical(fromDatabase)).toEqual(buildParcelCanonical(referenceParcel));
   });
 });

@@ -24,6 +24,7 @@ describe("fetchAccountKey", () => {
       "0.0.100",
       json({ account: "0.0.100", key: { _type: type, key: key.toStringRaw() } }),
     );
+
     expect(fetched.equals(key)).toBe(true);
   });
 
@@ -51,6 +52,7 @@ describe("fetchTopicKeys", () => {
       "0.0.10730186",
       json({ submit_key: { _type: "ProtobufEncoded", key: REAL_SUBMIT_KEY_HEX }, admin_key: null }),
     );
+
     expect(keys.adminKey).toBeNull();
     expect(keys.submitKey).toMatchObject({ kind: "threshold", threshold: 2 });
     if (keys.submitKey?.kind !== "threshold") return;
@@ -83,6 +85,7 @@ describe("fetchSchedule", () => {
         transaction_body: body,
       }),
     );
+
     expect(schedule).toMatchObject({
       scheduleId: "0.0.777",
       executedTimestamp: "1790000000.000000001",
@@ -110,6 +113,7 @@ describe("fetchSchedule", () => {
         transaction_body: Buffer.from([0x08, 0x01]).toString("base64"),
       }),
     );
+
     expect(other.scheduledMessage).toBeNull();
     await expect(fetchSchedule(BASE, "0.0.2", json({}, 404))).rejects.toBeInstanceOf(
       MirrorNotFoundError,

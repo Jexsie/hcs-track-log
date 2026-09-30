@@ -35,12 +35,14 @@ async function stage(
   const payloadHash = await computePayloadHash(base.event);
   const message = serializeEnvelope(buildEnvelope({ parcelHash: base.parcelHash, payloadHash }));
   let scheduled;
+
   try {
     // The memo is public: an opaque submission id only, never business data.
     scheduled = await scheduler.schedule(message, `hcs-track-log approval ${id}`);
   } catch (error) {
     throw new SubmissionFailedError(error);
   }
+
   return pending.insert({
     ...base,
     id,
@@ -57,12 +59,14 @@ export async function proposeRegistration(
     input,
     (deps.now ?? (() => new Date()))(),
   );
+
   if (
     (await deps.cache.parcelExists(parcelHash)) ||
     (await deps.pending.hasOpenRegistration(parcelHash))
   ) {
     throw new ParcelExistsError(parcelHash);
   }
+
   return stage(
     { kind: "register-parcel", parcelHash, parcel, event, proposedBy: deps.proposedBy },
     deps,
@@ -75,9 +79,12 @@ export async function proposeEvent(
 ): Promise<PendingSubmission> {
   const parcelHash =
     typeof input.parcelHash === "string" ? parseTrackingId(input.parcelHash) : null;
+
   if (!parcelHash) throw new ValidationError("parcelHash", "must be a 64-character hex SHA-256");
   const event: CargoEvent = prepareEvent(input.event);
+
   if (!(await deps.cache.parcelExists(parcelHash))) throw new ParcelNotFoundError(parcelHash);
+
   return stage(
     { kind: "record-event", parcelHash, parcel: null, event, proposedBy: deps.proposedBy },
     deps,

@@ -6,16 +6,20 @@ const timeline = { parcelHash: HASH, parcel: {}, events: [] };
 
 function recorder(response: () => Response) {
   const calls: { url: string; init: RequestInit | undefined }[] = [];
+
   const fetchImpl: typeof fetch = async (input, init) => {
     calls.push({ url: String(input), init });
+
     return response();
   };
+
   return { calls, fetchImpl };
 }
 
 describe("lookupTimeline", () => {
   it("POSTs the tracking ID in the JSON body, not the URL", async () => {
     const { calls, fetchImpl } = recorder(() => Response.json(timeline));
+
     expect(await lookupTimeline(HASH, fetchImpl)).toEqual({ status: "found", timeline });
     expect(calls[0]?.url).toBe("/api/parcels/lookup");
     expect(calls[0]?.url).not.toContain(HASH);
@@ -41,6 +45,7 @@ describe("lookupTimeline", () => {
     const down = await lookupTimeline(HASH, async () => {
       throw new TypeError("Failed to fetch");
     });
+
     expect(down.status).toBe("error");
   });
 });

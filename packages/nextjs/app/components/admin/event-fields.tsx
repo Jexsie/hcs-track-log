@@ -29,6 +29,7 @@ export function EventFields({
 }) {
   const set = (key: keyof EventForm) => (e: { target: { value: string } }) =>
     onChange({ ...value, [key]: e.target.value });
+
   return (
     <FormSection title={title}>
       <Field

@@ -17,6 +17,7 @@ describe("buildEnvelope / serializeEnvelope", () => {
       parcelHash: REFERENCE_PARCEL_SHA256,
       payloadHash: REFERENCE_EVENT_SHA256,
     });
+
     expect(built).toEqual(envelope);
     expect(ENVELOPE_VERSION).toBe(1);
     expect(new TextDecoder().decode(serializeEnvelope(built))).toBe(

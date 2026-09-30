@@ -6,10 +6,12 @@ import { TEST_DATABASE_URL, assertTestDatabase } from "./database";
 export default async function setup(): Promise<void> {
   assertTestDatabase(TEST_DATABASE_URL);
   const pool = new pg.Pool({ connectionString: TEST_DATABASE_URL });
+
   try {
     await pool.query("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;");
   } catch (error) {
     const { host, pathname } = new URL(TEST_DATABASE_URL);
+
     throw new Error(
       `Cannot reach the test database ${host}${pathname}. Postgres is required: run \`docker compose up -d\`.`,
       { cause: error },
@@ -17,5 +19,6 @@ export default async function setup(): Promise<void> {
   } finally {
     await pool.end();
   }
+
   await migrate(TEST_DATABASE_URL, "up", () => {});
 }

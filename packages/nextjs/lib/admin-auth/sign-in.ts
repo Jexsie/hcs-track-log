@@ -20,11 +20,13 @@ export async function signInWithWallet(
   { secret, now, submitKeys, resolveAccountKey }: SignInDeps,
 ): Promise<AdminIdentity> {
   const challenge = verifyChallenge(input.token, secret, now());
+
   if (challenge.accountId !== input.accountId) {
     throw new AuthError("BAD_CHALLENGE", "challenge was issued for a different account");
   }
 
   let accountKey: PublicKey;
+
   try {
     accountKey = await resolveAccountKey(input.accountId);
   } catch {
@@ -37,11 +39,13 @@ export async function signInWithWallet(
   if (!verifyWalletMessageSignature(challenge.message, input.signatureMap, accountKey)) {
     throw new AuthError("BAD_SIGNATURE", "signature does not match this account's key");
   }
+
   if (!submitKeys.some((k) => k.equals(accountKey))) {
     throw new AuthError(
       "NOT_A_SUBMITTER",
       "this account's key is not one of the topic's submit keys",
     );
   }
+
   return { accountId: input.accountId, publicKey: accountKey.toStringDer() };
 }

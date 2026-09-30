@@ -13,21 +13,28 @@ export function checkScheduledMessage(
   schedule: ScheduleState,
   topicId: string,
 ): ScheduleCheck {
-  if (!expected)
+  if (!expected) {
     return {
       ok: false,
       reason: "the displayed content is invalid or does not match its tracking ID",
     };
+  }
+
   const scheduled = schedule.scheduledMessage;
+
   if (!scheduled) return { ok: false, reason: "the schedule does not wrap a topic message" };
-  if (scheduled.topicId !== topicId)
+
+  if (scheduled.topicId !== topicId) {
     return { ok: false, reason: `the schedule targets topic ${scheduled.topicId}, not ${topicId}` };
+  }
+
   if (!sameBytes(scheduled.message, expected)) {
     return {
       ok: false,
       reason: "the scheduled ledger message does not match the displayed content",
     };
   }
+
   return { ok: true };
 }
 
@@ -45,6 +52,7 @@ function requiredSignatures(key: DecodedKey | null): number {
   if (!key) return 0;
   if (key.kind === "threshold") return key.threshold;
   if (key.kind === "keyList") return key.keys.length;
+
   return 1;
 }
 
@@ -57,6 +65,7 @@ export function approvalProgress(
   const members = keyMembers(submitKey).map((k) => k.toBytesRaw());
   const signed = members.filter((m) => signerPublicKeys.some((s) => sameBytes(s, m)));
   const yours = you?.toBytesRaw();
+
   return {
     approvals: signed.length,
     required: requiredSignatures(submitKey),

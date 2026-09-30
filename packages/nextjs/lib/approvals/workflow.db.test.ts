@@ -25,6 +25,7 @@ const pool = createTestPool();
 const cache = new PostgresTrackingStore(pool);
 const reader = new PostgresTrackingReader(pool);
 const pending = new PendingSubmissionStore(pool);
+
 afterAll(() => pool.end());
 
 const { createdAt: _serverAssigned, ...parcelForm } = referenceParcel;
@@ -59,6 +60,7 @@ describe("propose → approve in wallets → finalize", () => {
     );
 
     const scheduled = ledger.schedules.get(submission.scheduleId);
+
     expect(scheduled).toBeDefined();
     const expected = serializeEnvelope(
       buildEnvelope({
@@ -66,6 +68,7 @@ describe("propose → approve in wallets → finalize", () => {
         payloadHash: await computePayloadHash(referenceEvent),
       }),
     );
+
     expect(scheduled?.message).toEqual(expected);
     expect(scheduled?.memo).toBe(`hcs-track-log approval ${submission.id}`); // no business data on-chain
     expect(ledger.entries).toHaveLength(0);
@@ -89,6 +92,7 @@ describe("propose → approve in wallets → finalize", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       proposeDeps(),
     );
+
     await ledger.approve(submission.scheduleId, alice ?? "");
     await ledger.approve(submission.scheduleId, bob ?? "");
 
@@ -114,6 +118,7 @@ describe("propose → approve in wallets → finalize", () => {
         fetch: ledger.fetch,
       }),
     });
+
     expect(report.parcel.status).toBe("verified");
     expect(report.summary).toEqual({ verified: 1, tampered: 0, unavailable: 0 });
   });
@@ -123,6 +128,7 @@ describe("propose → approve in wallets → finalize", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       proposeDeps(),
     );
+
     await ledger.approve(reg.scheduleId, alice ?? "");
     await ledger.approve(reg.scheduleId, carol ?? "");
     await finalizeSubmission(reg.id, finalizeDeps());
@@ -131,6 +137,7 @@ describe("propose → approve in wallets → finalize", () => {
       { parcelHash: reg.parcelHash, event: { ...referenceEvent, status: "Delivered" } },
       proposeDeps(),
     );
+
     await ledger.approve(next.scheduleId, bob ?? "");
     await ledger.approve(next.scheduleId, carol ?? "");
     expect(await finalizeSubmission(next.id, finalizeDeps())).toMatchObject({
@@ -148,6 +155,7 @@ describe("propose → approve in wallets → finalize", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       proposeDeps(),
     );
+
     await pool.query(
       `UPDATE pending_submissions SET event_content = jsonb_set(event_content, '{location}', '"Nairobi Depot, Kenya"') WHERE id = $1`,
       [submission.id],
@@ -172,6 +180,7 @@ describe("propose → approve in wallets → finalize", () => {
       ...finalizeDeps(),
       readSchedule: () => fetchSchedule(FAKE_MIRROR, "0.0.424242", ledger.fetch),
     };
+
     expect(await finalizeSubmission(submission.id, lagging)).toEqual({
       status: "pending",
       approvals: 0,
@@ -184,6 +193,7 @@ describe("propose → approve in wallets → finalize", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       proposeDeps(),
     );
+
     await pool.query(
       "UPDATE pending_submissions SET expires_at = now() - interval '1 minute' WHERE id = $1",
       [submission.id],
@@ -213,6 +223,7 @@ describe("proposal guards (nothing is scheduled)", () => {
       proposeEvent({ parcelHash: "a".repeat(64), event: referenceEvent }, proposeDeps()),
     ).rejects.toThrow(ParcelNotFoundError);
     const now = () => new Date("2026-09-28T10:00:00Z");
+
     await proposeRegistration(
       { parcel: parcelForm, firstEvent: referenceEvent },
       { ...proposeDeps(), now },
@@ -243,6 +254,7 @@ describe("proposal guards (nothing is scheduled)", () => {
       { parcel: { ...parcelForm, bookingRef: "BK-2" }, firstEvent: referenceEvent },
       proposeDeps(),
     );
+
     await ledger.approve(a.scheduleId, alice ?? "");
     await ledger.approve(a.scheduleId, bob ?? "");
     await finalizeSubmission(a.id, finalizeDeps());
@@ -264,6 +276,7 @@ describe("duplicate registrations of one parcel", () => {
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const [failure] = results.filter((r) => r.status === "rejected");
+
     expect(failure?.reason).toBeInstanceOf(ParcelExistsError);
     expect(await count("pending_submissions")).toBe(1);
   });
@@ -279,12 +292,14 @@ describe("duplicate registrations of one parcel", () => {
 
   it("still caches the event when another registration of the parcel was finalized first", async () => {
     const first = await register();
+
     await ledger.approve(first.scheduleId, alice ?? "");
     await ledger.approve(first.scheduleId, bob ?? "");
     await finalizeSubmission(first.id, finalizeDeps());
 
     // A second approved registration of the same parcel, e.g. one staged before the index existed.
     const message = await expectedEnvelope(first);
+
     if (!message) throw new Error("expected an envelope");
     const scheduled = await ledger.schedule(message, "second registration");
     const { id: _id, scheduleId: _scheduleId, expiresAt: _expiresAt, ...content } = first;
@@ -294,6 +309,7 @@ describe("duplicate registrations of one parcel", () => {
       scheduleId: scheduled.scheduleId,
       expiresAt: scheduled.expiresAt,
     });
+
     await ledger.approve(second.scheduleId, alice ?? "");
     await ledger.approve(second.scheduleId, bob ?? "");
 

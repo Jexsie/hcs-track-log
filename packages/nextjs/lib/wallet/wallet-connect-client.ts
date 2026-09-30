@@ -25,6 +25,7 @@ export function getSignClient(projectId: string): Promise<SignClient> {
     clientPromise = null;
     throw error;
   });
+
   return clientPromise;
 }
 
@@ -34,6 +35,7 @@ export function restoreSession(
   network: HederaNetwork,
 ): SessionTypes.Struct | null {
   const now = Date.now() / 1000;
+
   return (
     client.session
       .getAll()
@@ -47,7 +49,9 @@ export async function startPairing(client: SignClient, network: HederaNetwork) {
   const { uri, approval } = await client.connect({
     requiredNamespaces: requiredNamespaces(network),
   });
+
   if (!uri) throw new Error("wallet pairing did not return a URI");
+
   return { uri, approval };
 }
 
@@ -61,7 +65,9 @@ export async function walletSignMessage(
   const result = await client.request<{ signatureMap?: unknown }>(
     signMessageRequest(session.topic, network, accountId, message),
   );
+
   if (typeof result.signatureMap !== "string") throw new Error("wallet returned no signature");
+
   return result.signatureMap;
 }
 

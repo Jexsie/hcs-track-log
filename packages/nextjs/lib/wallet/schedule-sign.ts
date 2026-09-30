@@ -17,12 +17,15 @@ export function buildScheduleSignTransaction({
   if (!/^\d+\.\d+\.\d+$/.test(scheduleId) || !/^\d+\.\d+\.\d+$/.test(payerAccountId)) {
     throw new Error("schedule and account ids must look like 0.0.12345");
   }
+
   const tx = new ScheduleSignTransaction()
     .setScheduleId(ScheduleId.fromString(scheduleId))
     .setTransactionId(TransactionId.generate(AccountId.fromString(payerAccountId)))
     .setNodeAccountIds(NODES)
     .freeze();
   let binary = "";
+
   for (const byte of tx.toBytes()) binary += String.fromCharCode(byte);
+
   return btoa(binary);
 }

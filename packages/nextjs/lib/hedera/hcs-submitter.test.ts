@@ -6,6 +6,7 @@ import { ThresholdKeyError, buildThresholdKey, countSatisfiedSignatures } from "
 // Offline: freezing and signing needs a client for node ids and a transaction id, but no network I/O.
 const operatorKey = PrivateKey.generateED25519();
 const client = Client.forTestnet().setOperator(AccountId.fromString("0.0.1001"), operatorKey);
+
 afterAll(() => client.close());
 
 const topicId = TopicId.fromString("0.0.5005");
@@ -53,6 +54,7 @@ describe("HcsEnvelopeSubmitter", () => {
       signers: signers.slice(0, 2),
     });
     const tx = await submitter.prepare(message);
+
     tx.removeSignature(second.publicKey);
     expect(countSatisfiedSignatures(submitKey, tx)).toBe(1);
   });

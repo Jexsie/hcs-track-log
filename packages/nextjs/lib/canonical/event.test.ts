@@ -20,6 +20,7 @@ describe("buildEventCanonical", () => {
     const fromDate = { ...referenceEvent, timestamp: new Date("2026-09-25T11:40:00Z") };
 
     const expected = buildEventCanonical(referenceEvent);
+
     expect(buildEventCanonical(messy)).toEqual(expected);
     expect(buildEventCanonical(fromDate)).toEqual(expected);
     expect(buildEventCanonical(referenceEvent)).toEqual(expected);
@@ -34,6 +35,7 @@ describe("buildEventCanonical", () => {
       { ...referenceEvent, carrier: { ...referenceEvent.carrier, scacCode: "OTHR" } },
       { ...referenceEvent, timestamp: "2026-09-25T11:40:01Z" },
     ];
+
     for (const v of variants) expect(text(buildEventCanonical(v))).not.toBe(base);
   });
 });

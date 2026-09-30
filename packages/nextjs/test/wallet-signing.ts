@@ -10,5 +10,6 @@ export async function walletSign(key: PrivateKey, message: string): Promise<stri
     ...lenField(1, key.publicKey.toBytesRaw()),
     ...lenField(sigField, signature),
   ]);
+
   return Buffer.from(new Uint8Array(lenField(1, pair))).toString("base64");
 }

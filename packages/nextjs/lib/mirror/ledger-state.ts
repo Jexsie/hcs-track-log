@@ -15,23 +15,30 @@ const base = (url: string) => url.replace(/\/+$/, "");
 
 function entity(id: string): string {
   if (!ENTITY_ID.test(id)) throw new MirrorRequestError(`invalid entity id "${id}"`);
+
   return id;
 }
 
 function hexToBytes(hex: string): Uint8Array {
-  if (!/^(?:[0-9a-fA-F]{2})*$/.test(hex))
+  if (!/^(?:[0-9a-fA-F]{2})*$/.test(hex)) {
     throw new MirrorRequestError("mirror node returned invalid hex");
+  }
+
   return Uint8Array.from(hex.match(/../g) ?? [], (h) => parseInt(h, 16));
 }
 
 function parseKey(value: unknown): DecodedKey | null {
   if (value === null || value === undefined) return null;
   const { _type, key } = asObject(value);
-  if (typeof key !== "string")
+
+  if (typeof key !== "string") {
     throw new MirrorRequestError("mirror node returned an unexpected key shape");
+  }
+
   if (_type === "ED25519") return { kind: "ed25519", publicKey: hexToBytes(key) };
   if (_type === "ECDSA_SECP256K1") return { kind: "ecdsa-secp256k1", publicKey: hexToBytes(key) };
   if (_type === "ProtobufEncoded") return decodeKey(hexToBytes(key));
+
   return { kind: "unsupported" };
 }
 
@@ -39,6 +46,7 @@ function parseKey(value: unknown): DecodedKey | null {
 export function toPublicKey(key: DecodedKey): PublicKey | null {
   if (key.kind === "ed25519") return PublicKey.fromBytesED25519(key.publicKey);
   if (key.kind === "ecdsa-secp256k1") return PublicKey.fromBytesECDSA(key.publicKey);
+
   return null;
 }
 
@@ -57,10 +65,13 @@ export async function fetchAccountKey(
   );
   const key = parseKey(body.key);
   const publicKey = key && toPublicKey(key);
-  if (!publicKey)
+
+  if (!publicKey) {
     throw new MirrorRequestError(
       `account ${accountId} does not have a single ED25519 or ECDSA key`,
     );
+  }
+
   return publicKey;
 }
 
@@ -81,6 +92,7 @@ export async function fetchTopicKeys(
       `topic ${topicId}`,
     ),
   );
+
   return { adminKey: parseKey(body.admin_key), submitKey: parseKey(body.submit_key) };
 }
 
@@ -108,9 +120,13 @@ export async function fetchSchedule(
       `schedule ${scheduleId}`,
     ),
   );
-  if (typeof body.transaction_body !== "string")
+
+  if (typeof body.transaction_body !== "string") {
     throw new MirrorRequestError("mirror node returned an unexpected schedule");
+  }
+
   const signatures = Array.isArray(body.signatures) ? body.signatures : [];
+
   return {
     scheduleId,
     executedTimestamp: typeof body.executed_timestamp === "string" ? body.executed_timestamp : null,
@@ -118,6 +134,7 @@ export async function fetchSchedule(
     expirationTime: typeof body.expiration_time === "string" ? body.expiration_time : null,
     signerPublicKeys: signatures.flatMap((s) => {
       const prefix = asObject(s).public_key_prefix;
+
       return typeof prefix === "string" ? [decodeBase64(prefix)] : [];
     }),
     scheduledMessage: decodeScheduledTopicMessage(decodeBase64(body.transaction_body)),
@@ -129,5 +146,6 @@ export function keyMembers(key: DecodedKey | null): PublicKey[] {
   if (!key) return [];
   if (key.kind === "threshold" || key.kind === "keyList") return key.keys.flatMap(keyMembers);
   const single = toPublicKey(key);
+
   return single ? [single] : [];
 }

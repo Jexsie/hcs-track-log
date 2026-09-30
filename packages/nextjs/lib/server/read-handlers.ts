@@ -13,7 +13,9 @@ export async function loadTimeline(
   parcelHash: string,
 ): Promise<TimelineDto | null> {
   const parcel = await reader.findParcel(parcelHash);
+
   if (!parcel) return null;
+
   return toTimelineDto(parcel, await reader.listEvents(parcelHash));
 }
 
@@ -34,11 +36,14 @@ export async function lookupTimelineResponse(
       typeof body === "object" && body !== null && !Array.isArray(body)
         ? (body as { trackingId?: unknown }).trackingId
         : undefined;
+
     if (typeof raw !== "string") throw new ValidationError("trackingId", "must be a string");
 
     const parcelHash = parseTrackingId(raw);
     const timeline = parcelHash ? await loadTimeline(reader, parcelHash) : null;
+
     if (!timeline) throw new ParcelNotFoundError(raw.trim());
+
     return jsonResponse(timeline, 200, { "cache-control": "no-store" });
   } catch (error) {
     return errorResponse(error, log);

@@ -22,7 +22,9 @@ class MemoryPending implements PendingStore {
       statusReason: null,
       hcsSequenceNumber: null,
     };
+
     this.rows.push(row);
+
     return row;
   }
   async get(id: string) {
@@ -40,6 +42,7 @@ class MemoryPending implements PendingStore {
 
 let pending: MemoryPending;
 let ledger: FakeLedger;
+
 function handlers(overrides: Partial<Parameters<typeof createAdminHandlers>[0]> = {}) {
   return createAdminHandlers({
     secret: () => SECRET,
@@ -48,7 +51,9 @@ function handlers(overrides: Partial<Parameters<typeof createAdminHandlers>[0]> 
     submitKeys: async () => [alice.publicKey],
     resolveAccountKey: async (id) => {
       const key = keys[id];
+
       if (!key) throw new Error("unknown");
+
       return key.publicKey;
     },
     scheduler: async () => ledger,
@@ -75,7 +80,9 @@ async function signIn(accountId: string): Promise<Response> {
     await h.challenge(json("/api/admin/auth/challenge", { accountId }))
   ).json()) as { message: string; token: string };
   const key = keys[accountId];
+
   if (!key) throw new Error("no key");
+
   return h.createSession(
     json("/api/admin/auth/session", {
       accountId,
@@ -97,22 +104,30 @@ describe("wallet sign-in", () => {
     const res = await handlers().challenge(
       json("/api/admin/auth/challenge", { accountId: "0.0.100" }),
     );
+
     expect(res.status).toBe(200);
     const body = (await res.json()) as { message: string };
+
     expect(body.message).toContain("Account: 0.0.100");
     expect(body.message).toContain("Domain: localhost:3000");
   });
 
   it("sets an HttpOnly, SameSite=Strict, Secure session cookie for a submit-key holder", async () => {
     const res = await signIn("0.0.100");
+
     expect(res.status).toBe(200);
     const cookie = res.headers.get("set-cookie") ?? "";
+
     expect(cookie).toContain(`${SESSION_COOKIE}=`);
-    for (const attr of ["HttpOnly", "SameSite=Strict", "Secure", "Path=/"])
+
+    for (const attr of ["HttpOnly", "SameSite=Strict", "Secure", "Path=/"]) {
       expect(cookie).toContain(attr);
+    }
+
     const me = await handlers().getSession(
       json("/api/admin/auth/session", null, cookieFrom(res), "GET"),
     );
+
     expect(await me.json()).toEqual({ accountId: "0.0.100" });
   });
 
@@ -121,6 +136,7 @@ describe("wallet sign-in", () => {
     const res = await handlers().createSession(
       json("/api/admin/auth/session", { accountId: "0.0.100", token: "x", signatureMap: "y" }),
     );
+
     expect(res.status).toBe(401);
     expect(
       (await handlers().getSession(json("/api/admin/auth/session", null, undefined, "GET"))).status,
@@ -131,6 +147,7 @@ describe("wallet sign-in", () => {
     const res = await handlers().deleteSession(
       json("/api/admin/auth/session", null, cookieFrom(await signIn("0.0.100")), "DELETE"),
     );
+
     expect(res.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 });
@@ -150,6 +167,7 @@ describe("ledger outages", () => {
         signatureMap: await walletSign(alice, challenge.message),
       }),
     );
+
     expect(res.status).toBe(503);
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
       "LEDGER_UNAVAILABLE",
@@ -160,6 +178,7 @@ describe("ledger outages", () => {
 describe("submissions API", () => {
   it("requires a session for listing, proposing and finalizing", async () => {
     const h = handlers();
+
     expect(
       (await h.listSubmissions(json("/api/admin/submissions", null, undefined, "GET"))).status,
     ).toBe(401);
@@ -179,6 +198,7 @@ describe("submissions API", () => {
       headers: { "content-type": "application/x-www-form-urlencoded", cookie },
       body: "kind=register-parcel",
     });
+
     expect((await handlers().propose(form)).status).toBe(415);
   });
 
@@ -191,6 +211,7 @@ describe("submissions API", () => {
         cookie,
       ),
     );
+
     expect(res.status).toBe(201);
     const { submission } = (await res.json()) as {
       submission: {
@@ -200,6 +221,7 @@ describe("submissions API", () => {
         parcel: { createdAt: string };
       };
     };
+
     expect(submission.proposedBy).toBe("0.0.100");
     expect(submission.parcel.createdAt).toMatch(/Z$/);
     expect(ledger.schedules.has(submission.scheduleId)).toBe(true);
@@ -207,11 +229,13 @@ describe("submissions API", () => {
     const list = (await (
       await handlers().listSubmissions(json("/api/admin/submissions", null, cookie, "GET"))
     ).json()) as { submissions: { id: string }[] };
+
     expect(list.submissions.map((s) => s.id)).toEqual([submission.id]);
   });
 
   it("rejects an unknown submission kind", async () => {
     const cookie = cookieFrom(await signIn("0.0.100"));
+
     expect(
       (
         await handlers().propose(

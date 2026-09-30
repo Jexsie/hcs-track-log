@@ -51,6 +51,7 @@ describe("readOperatorConfig", () => {
 
 describe.each(["submit", "admin"] as const)("readKeyConfig(%s)", (role) => {
   const P = `HCS_${role.toUpperCase()}`;
+
   it("splits comma-separated public keys and parses the threshold", () => {
     expect(
       readKeyConfig(role, env({ [`${P}_PUBLIC_KEYS`]: " a, b ,c ", [`${P}_THRESHOLD`]: "2" })),

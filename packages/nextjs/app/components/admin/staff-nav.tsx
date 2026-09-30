@@ -12,10 +12,12 @@ const NAV = [
 /** Staff navigation with the current page highlighted. */
 export function StaffNav() {
   const pathname = usePathname();
+
   return (
     <nav aria-label="Staff" className="flex flex-wrap gap-1">
       {NAV.map((item) => {
         const active = pathname === item.href;
+
         return (
           <Link
             key={item.href}

@@ -66,7 +66,9 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function useAdmin(): AdminContextValue {
   const value = useContext(AdminContext);
+
   if (!value) throw new Error("useAdmin must be used inside <AdminProvider>");
+
   return value;
 }
 
@@ -76,6 +78,7 @@ class UiError extends Error {}
 function message(error: unknown): string {
   if (error instanceof UiError) return error.message;
   const raw = error instanceof Error ? error.message : String(error);
+
   return /reject|cancel|denied/i.test(raw)
     ? "Cancelled in your wallet."
     : "Something went wrong with your wallet. Try again.";
@@ -105,10 +108,12 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
   const adopt = useCallback(
     async (s: SessionTypes.Struct) => {
       const accountId = hederaAccountFromSession(s, config.network);
+
       if (!accountId) throw new UiError(`Switch your wallet to ${config.network} and try again.`);
       session.current = s;
       setWallet({ status: "connected", accountId, publicKey: null });
       const publicKey = await fetchAccountKey(config.mirrorBaseUrl, accountId).catch(() => null);
+
       setWallet({ status: "connected", accountId, publicKey });
     },
     [config.mirrorBaseUrl, config.network],
@@ -117,16 +122,19 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
   // Restore the admin session cookie and any live wallet session after a reload.
   useEffect(() => {
     let cancelled = false;
+
     getSession().then((result) => {
       if (cancelled) return;
       setAdminAccountId(result.ok ? result.data.accountId : null);
       setSessionChecked(true);
     });
+
     if (config.projectId) {
       getSignClient(config.projectId)
         .then((c) => {
           client.current = c;
           const existing = restoreSession(c, config.network);
+
           return existing && !cancelled ? adopt(existing) : undefined;
         })
         .catch(
@@ -135,6 +143,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
             setError("Could not start the wallet connection. Reload the page to try again."),
         );
     }
+
     return () => {
       cancelled = true;
     };
@@ -143,6 +152,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
   const run = useCallback(async (work: () => Promise<void>) => {
     setBusy(true);
     setError(null);
+
     try {
       await work();
     } catch (e) {
@@ -153,8 +163,10 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
   }, []);
 
   const requireWallet = useCallback(() => {
-    if (!client.current || !session.current || wallet.status !== "connected")
+    if (!client.current || !session.current || wallet.status !== "connected") {
       throw new UiError("Connect your wallet first.");
+    }
+
     return { c: client.current, s: session.current, accountId: wallet.accountId };
   }, [wallet]);
 
@@ -172,7 +184,9 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
           if (!config.projectId) throw new UiError("Wallet sign-in is not set up yet.");
           const c = (client.current ??= await getSignClient(config.projectId));
           const { uri, approval } = await startPairing(c, config.network);
+
           setWallet({ status: "pairing", uri });
+
           try {
             await adopt(await approval());
           } catch (e) {
@@ -182,8 +196,10 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
         }),
       disconnect: () =>
         run(async () => {
-          if (client.current && session.current)
+          if (client.current && session.current) {
             await disconnectWallet(client.current, session.current).catch(() => {});
+          }
+
           session.current = null;
           setWallet({ status: "idle" });
         }),
@@ -191,8 +207,11 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
         run(async () => {
           const { c, s, accountId } = requireWallet();
           const challenge = await requestChallenge(accountId);
-          if (!challenge.ok)
+
+          if (!challenge.ok) {
             throw new UiError(SIGN_IN_ERROR[challenge.code] ?? "Sign-in failed. Try again.");
+          }
+
           const signatureMap = await walletSignMessage(
             c,
             s,
@@ -205,8 +224,11 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
             token: challenge.data.token,
             signatureMap,
           });
-          if (!signedIn.ok)
+
+          if (!signedIn.ok) {
             throw new UiError(SIGN_IN_ERROR[signedIn.code] ?? "Sign-in failed. Try again.");
+          }
+
           setAdminAccountId(signedIn.data.accountId);
         }),
       signOut: () =>
@@ -220,6 +242,7 @@ export function AdminProvider({ config, children }: { config: AdminConfig; child
           scheduleId,
           payerAccountId: accountId,
         });
+
         await walletSignAndExecute(c, s, config.network, accountId, transactionList);
       },
     }),

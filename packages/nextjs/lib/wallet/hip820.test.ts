@@ -45,6 +45,7 @@ describe("HIP-820 wire format", () => {
     const session = {
       namespaces: { hedera: { accounts: ["hedera:mainnet:0.0.9", "hedera:testnet:0.0.100"] } },
     };
+
     expect(hederaAccountFromSession(session, "testnet")).toBe("0.0.100");
     expect(hederaAccountFromSession(session, "previewnet")).toBeNull();
     expect(hederaAccountFromSession({ namespaces: {} }, "testnet")).toBeNull();

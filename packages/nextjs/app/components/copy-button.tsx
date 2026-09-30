@@ -5,6 +5,7 @@ import { CheckIcon, CopyIcon } from "./icons";
 
 export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(value);
@@ -14,6 +15,7 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
       setCopied(false);
     }
   }
+
   return (
     <button
       type="button"

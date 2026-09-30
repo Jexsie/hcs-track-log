@@ -25,12 +25,14 @@ async function main(): Promise<void> {
   const submitKey = parseThresholdKey(submit, "submit");
   const adminKey = parseThresholdKey(admin, "admin");
   const adminSigners = parseSignerKeys(readSignerKeys("admin"), "admin");
+
   assertOperatorNotSubmitter(
     parsePrivateKey(operator.operatorKey, "HEDERA_OPERATOR_KEY").publicKey,
     submitKey,
   );
 
   const client = createClient(operator);
+
   try {
     console.log(
       `Creating topic on ${operator.network}: ${submit.threshold}-of-${submit.publicKeys.length} submit key, ` +
@@ -42,6 +44,7 @@ async function main(): Promise<void> {
       adminSigners,
       memo: "hcs-track-log v1",
     });
+
     console.log(
       `\n✅ Topic ${topicId.toString()} created; admin and submit keys verified on-chain.\n`,
     );

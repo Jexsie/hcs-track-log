@@ -16,14 +16,19 @@ export function readObject(
   label: string = path,
 ): UnknownRecord {
   if (value === undefined || value === null) throw new ValidationError(label, "is required");
+
   if (typeof value !== "object" || Array.isArray(value)) {
     throw new ValidationError(label, "must be an object");
   }
+
   const record = value as UnknownRecord;
+
   for (const key of Object.keys(record)) {
-    if (!allowed.includes(key))
+    if (!allowed.includes(key)) {
       throw new ValidationError(join(path, key), "is not an allowed field");
+    }
   }
+
   return record;
 }
 

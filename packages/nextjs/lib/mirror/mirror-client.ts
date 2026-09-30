@@ -37,11 +37,15 @@ function parseMessage(body: unknown, topicId: string): MirrorMessage {
     typeof m.payer_account_id === "string" &&
     typeof m.topic_id === "string" &&
     Number.isSafeInteger(m.sequence_number);
+
   if (!valid) throw new MirrorRequestError("mirror node returned an unexpected message shape");
+
   if (m.topic_id !== topicId) {
     throw new MirrorRequestError(`mirror node returned a message for topic ${String(m.topic_id)}`);
   }
+
   const message = decodeBase64(m.message as string);
+
   return {
     topicId,
     sequenceNumber: BigInt(m.sequence_number as number),
@@ -66,6 +70,7 @@ export function createMirrorClient({
     async getMessage(sequenceNumber) {
       const url = `${base}${topicPath}/${sequenceNumber}`;
       const body = await getMirrorJson(url, fetchImpl, `message at sequence ${sequenceNumber}`);
+
       return parseMessage(body, topicId);
     },
 
@@ -73,31 +78,43 @@ export function createMirrorClient({
       if (!/^\d+\.\d{1,9}$/.test(consensusTimestamp)) {
         throw new MirrorRequestError("invalid consensus timestamp");
       }
+
       const url = `${base}${topicPath}?timestamp=eq:${consensusTimestamp}&limit=1`;
       const page = (await getMirrorJson(url, fetchImpl)) as { messages?: unknown };
+
       if (!Array.isArray(page.messages)) {
         throw new MirrorRequestError("mirror node returned an unexpected page");
       }
+
       const [first] = page.messages as unknown[];
+
       return first === undefined ? null : parseMessage(first, topicId);
     },
 
     async *listMessages({ limit = 100 } = {}) {
       let next: string | null = `${base}${topicPath}?limit=${limit}&order=asc`;
+
       while (next) {
         const page = (await getMirrorJson(next, fetchImpl)) as {
           messages?: unknown;
           links?: { next?: unknown };
         };
-        if (!Array.isArray(page.messages))
+
+        if (!Array.isArray(page.messages)) {
           throw new MirrorRequestError("mirror node returned an unexpected page");
+        }
+
         for (const raw of page.messages) yield parseMessage(raw, topicId);
 
         const link = page.links?.next;
+
         if (typeof link !== "string") break;
         const url = new URL(link, origin);
-        if (url.origin !== origin)
+
+        if (url.origin !== origin) {
           throw new MirrorRequestError("pagination link points at another origin");
+        }
+
         next = url.href;
       }
     },

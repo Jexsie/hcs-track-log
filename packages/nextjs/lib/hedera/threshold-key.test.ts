@@ -21,6 +21,7 @@ const pubs = [a, b, c];
 describe.each(["submit", "admin"] as const)("buildThresholdKey (%s)", (role) => {
   it("builds a threshold KeyList from the configured public keys", () => {
     const key = buildThresholdKey(pubs, 2, role);
+
     expect(key).toBeInstanceOf(KeyList);
     expect(key.threshold).toBe(2);
     expect(key.toArray()).toHaveLength(3);
@@ -55,6 +56,7 @@ describe("assertSignersSatisfy", () => {
 
   it("does not count keys outside the key list or the same key twice", () => {
     const outsider = PrivateKey.generateED25519().publicKey;
+
     expect(() => assertSignersSatisfy(key, [a, outsider], "admin")).toThrow(ThresholdKeyError);
     expect(() => assertSignersSatisfy(key, [a, a], "admin")).toThrow(ThresholdKeyError);
   });
@@ -69,6 +71,7 @@ describe("isSameThresholdKey", () => {
 
   it("detects a different threshold, key set, or a missing/single key", () => {
     const expected = buildThresholdKey(pubs, 2, "submit");
+
     expect(isSameThresholdKey(buildThresholdKey(pubs, 3, "submit"), expected)).toBe(false);
     expect(isSameThresholdKey(buildThresholdKey([a, b], 2, "submit"), expected)).toBe(false);
     expect(isSameThresholdKey(null, expected)).toBe(false);
@@ -82,6 +85,7 @@ describe("parsing from configuration", () => {
       { publicKeys: pubs.map((k) => k.toStringDer()), threshold: 2 },
       "admin",
     );
+
     expect(isSameThresholdKey(key, buildThresholdKey(pubs, 2, "admin"))).toBe(true);
     expect(() =>
       parseThresholdKey({ publicKeys: ["nope", a.toStringDer()], threshold: 2 }, "admin"),
@@ -97,12 +101,14 @@ describe("parsing from configuration", () => {
 describe("assertOperatorNotSubmitter", () => {
   it("refuses a submit key that includes the operator's key (the operator signs every ScheduleCreate)", () => {
     const key = buildThresholdKey(pubs, 2, "submit");
+
     expect(() => assertOperatorNotSubmitter(b, key)).toThrow(ThresholdKeyError);
     expect(() => assertOperatorNotSubmitter(b, key)).toThrow("operator");
   });
 
   it("accepts an operator that is not a submit-key member", () => {
     const outsider = PrivateKey.generateED25519().publicKey;
+
     expect(() =>
       assertOperatorNotSubmitter(outsider, buildThresholdKey(pubs, 2, "submit")),
     ).not.toThrow();

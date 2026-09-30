@@ -6,7 +6,9 @@ import { useAdmin } from "./admin-context";
 /** Fills the form with random, valid demo data. Hidden on mainnet. */
 export function SampleDataButton({ onFill, disabled }: { onFill: () => void; disabled?: boolean }) {
   const { config } = useAdmin();
+
   if (!sampleDataAllowed(config.network)) return null;
+
   return (
     <div className="flex justify-end">
       <button

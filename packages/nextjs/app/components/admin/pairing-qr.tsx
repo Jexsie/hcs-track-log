@@ -10,9 +10,11 @@ export function PairingQr({ uri, onCancel }: { uri: string; onCancel: () => void
 
   useEffect(() => {
     let cancelled = false;
+
     QRCode.toString(uri, { type: "svg", margin: 1, errorCorrectionLevel: "M" }).then((markup) => {
       if (!cancelled) setSvg(markup);
     });
+
     return () => {
       cancelled = true;
     };

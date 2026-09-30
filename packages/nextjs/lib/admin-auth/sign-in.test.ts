@@ -32,6 +32,7 @@ async function attempt(accountId: string, signer: PrivateKey, tamper?: (t: strin
     secret: SECRET,
     now,
   });
+
   return signInWithWallet(
     {
       accountId,
@@ -66,6 +67,7 @@ describe("signInWithWallet", () => {
       secret: SECRET,
       now,
     });
+
     await expect(
       signInWithWallet(
         { accountId: "0.0.100", token, signatureMap: await walletSign(alice, message) },

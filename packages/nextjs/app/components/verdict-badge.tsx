@@ -24,6 +24,7 @@ export function VerdictBadge({
       </span>
     );
   }
+
   if (verdict.status === "verified") {
     const href = explorerRecordUrl(network, verdict.consensusTimestamp);
     const content = (
@@ -31,6 +32,7 @@ export function VerdictBadge({
         <CheckIcon className="size-3.5" /> Verified
       </>
     );
+
     return href ? (
       <a
         className={`${BASE} bg-ok-soft text-ok hover:underline`}
@@ -45,6 +47,7 @@ export function VerdictBadge({
       <span className={`${BASE} bg-ok-soft text-ok`}>{content}</span>
     );
   }
+
   if (verdict.status === "tampered") {
     return (
       <span className={`${BASE} bg-danger text-white`}>
@@ -52,5 +55,6 @@ export function VerdictBadge({
       </span>
     );
   }
+
   return <span className={`${BASE} bg-warn-soft text-warn`}>Not checked</span>;
 }

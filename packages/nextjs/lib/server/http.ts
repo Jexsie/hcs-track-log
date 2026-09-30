@@ -47,11 +47,16 @@ export function errorResponse(error: unknown, log: Logger = console.error): Resp
   if (error instanceof ValidationError) {
     return failure(400, "VALIDATION_ERROR", error.message, { path: error.path });
   }
-  if (error instanceof ParcelNotFoundError)
+
+  if (error instanceof ParcelNotFoundError) {
     return failure(404, "PARCEL_NOT_FOUND", "no parcel with this tracking ID");
+  }
+
   if (error instanceof ParcelExistsError) return failure(409, "PARCEL_EXISTS", error.message);
+
   if (error instanceof SubmissionFailedError) {
     log("HCS submission failed", error.cause);
+
     return isMisconfiguration(error.cause)
       ? failure(500, "SERVER_MISCONFIGURED", "the server is not configured for ledger submissions")
       : failure(
@@ -60,6 +65,7 @@ export function errorResponse(error: unknown, log: Logger = console.error): Resp
           "the ledger did not accept the event; nothing was recorded",
         );
   }
+
   if (error instanceof DerivedWriteError) {
     // The event IS on the ledger; its content exists only here. Log everything needed to replay it.
     log("anchored event could not be cached; replay this insert", {
@@ -67,19 +73,24 @@ export function errorResponse(error: unknown, log: Logger = console.error): Resp
       parcel: error.parcel,
       cause: error.cause,
     });
+
     return failure(500, "CACHE_WRITE_FAILED", "the event was anchored but could not be cached", {
       hcsSequenceNumber: error.hcsSequenceNumber,
     });
   }
+
   log("unhandled error", error);
+
   return failure(500, "INTERNAL_ERROR", "internal server error");
 }
 
 /** Server-side log serialization: bigints as strings, Errors with name, message and cause. */
 export function serializeForLog(detail: unknown): string {
   return JSON.stringify(detail, (key, value: unknown) => {
-    if (value instanceof Error)
+    if (value instanceof Error) {
       return { name: value.name, message: value.message, cause: value.cause };
+    }
+
     return bigintAsString(key, value);
   });
 }

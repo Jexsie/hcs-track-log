@@ -14,6 +14,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 /** Exactly the details being approved. */
 export function SubmissionSummary({ submission }: { submission: SubmissionDto }) {
   const { parcel, event } = submission;
+
   return (
     <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-x-5 gap-y-2.5">
       {parcel && (

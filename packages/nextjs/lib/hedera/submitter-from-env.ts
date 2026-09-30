@@ -18,9 +18,12 @@ export async function createSubmitterFromEnv(
   const adminKey = parseThresholdKey(readKeyConfig("admin", env), "admin");
   const signers = parseSignerKeys(readSignerKeys("submit", env), "submit");
   const client = createClient(readOperatorConfig(env));
+
   try {
     const submitter = new HcsEnvelopeSubmitter({ client, topicId, submitKey, signers });
+
     await assertTopicKeys(client, topicId, { adminKey, submitKey });
+
     return submitter;
   } catch (error) {
     client.close();

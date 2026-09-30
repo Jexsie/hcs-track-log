@@ -65,10 +65,13 @@ export async function inTransaction<T>(
   work: (db: Queryable) => Promise<T>,
 ): Promise<T> {
   const client = await pool.connect();
+
   try {
     await client.query("BEGIN");
     const result = await work(client);
+
     await client.query("COMMIT");
+
     return result;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -86,6 +89,7 @@ export class PostgresTrackingStore implements TrackingStore {
     const { rowCount } = await this.pool.query("SELECT 1 FROM parcels WHERE parcel_hash = $1", [
       parcelHash,
     ]);
+
     return rowCount === 1;
   }
 

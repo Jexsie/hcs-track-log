@@ -39,6 +39,7 @@ describe("checkScheduledMessage (what an approver's browser checks before signin
   it("accepts a schedule whose message equals the envelope recomputed from the displayed content", async () => {
     const sub = await registration();
     const envelope = await expectedEnvelope(sub);
+
     expect(envelope).not.toBeNull();
     expect(checkScheduledMessage(envelope, schedule(envelope), "0.0.5005")).toEqual({ ok: true });
   });
@@ -50,6 +51,7 @@ describe("checkScheduledMessage (what an approver's browser checks before signin
       ...sub,
       event: { ...event, location: "Elsewhere" },
     });
+
     expect(checkScheduledMessage(other, schedule(envelope), "0.0.5005")).toMatchObject({
       ok: false,
     });
@@ -63,6 +65,7 @@ describe("checkScheduledMessage (what an approver's browser checks before signin
 
   it("refuses a registration whose parcel details do not hash to its tracking ID", async () => {
     const sub = await registration();
+
     expect(await expectedEnvelope({ ...sub, parcelHash: "f".repeat(64) })).toBeNull();
   });
 });
@@ -82,6 +85,7 @@ describe("approvalProgress", () => {
       },
       a,
     );
+
     expect(progress).toEqual({
       approvals: 1,
       required: 2,
@@ -94,6 +98,7 @@ describe("approvalProgress", () => {
       { kind: "threshold", threshold: 2, keys: [{ kind: "ed25519", publicKey: b.toBytesRaw() }] },
       outsider,
     );
+
     expect(other).toMatchObject({ approvals: 0, youCanApprove: false });
   });
 });

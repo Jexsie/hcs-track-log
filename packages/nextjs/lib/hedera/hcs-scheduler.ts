@@ -35,7 +35,9 @@ export class HcsScheduler implements EnvelopeScheduler {
       .setWaitForExpiry(false)
       .execute(client);
     const { scheduleId } = await response.getReceipt(client);
+
     if (!scheduleId) throw new Error("schedule receipt did not include a schedule id");
+
     return { scheduleId: scheduleId.toString(), expiresAt };
   }
 }

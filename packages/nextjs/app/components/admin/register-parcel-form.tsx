@@ -46,12 +46,15 @@ export function RegisterParcelForm() {
     e.preventDefault();
     const pErrors = validateParcelForm(parcel);
     const eErrors = validateEventForm(event);
+
     setParcelErrors(pErrors);
     setEventErrors(eErrors);
     setFailure(null);
     if (Object.keys(pErrors).length || Object.keys(eErrors).length) return;
+
     if (!adminAccountId) {
       setFailure(SIGN_IN_FIRST);
+
       return;
     }
 
@@ -60,14 +63,18 @@ export function RegisterParcelForm() {
       parcel: toParcelPayload(parcel),
       firstEvent: toEventPayload(event),
     });
+
     setPending(false);
 
     if (result.ok) {
       setProposal(result.data.submission);
+
       return;
     }
+
     setFailure(result);
     const field = result.path ? fieldForPath(result.path) : null;
+
     if (field && field in parcel) setParcelErrors({ [field]: friendlyMessage(field) });
     else if (field) setEventErrors({ [field]: friendlyMessage(field) });
   }

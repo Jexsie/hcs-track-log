@@ -24,14 +24,17 @@ export function buildThresholdKey(
   if (publicKeys.length < 2) {
     throw new ThresholdKeyError(`a multi-signature ${role} key needs at least 2 public keys`);
   }
+
   if (new Set(publicKeys.map(der)).size !== publicKeys.length) {
     throw new ThresholdKeyError(`${role} key contains duplicate public keys`);
   }
+
   if (!Number.isInteger(threshold) || threshold < 2 || threshold > publicKeys.length) {
     throw new ThresholdKeyError(
       `${role} key threshold must be between 2 and ${publicKeys.length}, got ${threshold}`,
     );
   }
+
   return new KeyList([...publicKeys], threshold);
 }
 
@@ -68,6 +71,7 @@ export function assertSignersSatisfy(
   const allowed = new Set(members(key).map(der));
   const distinct = new Set(signers.map(der).filter((k) => allowed.has(k)));
   const needed = requiredSignatures(key);
+
   if (distinct.size < needed) {
     throw new ThresholdKeyError(
       `configured signers satisfy ${distinct.size} of ${needed} required ${role}-key signatures`,
@@ -86,6 +90,7 @@ export function isSameThresholdKey(actual: Key | null, expected: KeyList): boole
   if (requiredSignatures(actual) !== requiredSignatures(expected)) return false;
   const a = members(actual).map(der).sort();
   const b = members(expected).map(der).sort();
+
   return (
     a.length === actual.toArray().length && a.length === b.length && a.every((k, i) => k === b[i])
   );

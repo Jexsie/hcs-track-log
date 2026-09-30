@@ -29,12 +29,14 @@ const lookup = (body: unknown) =>
 describe("POST /api/parcels/lookup (tracking ID in the body, never the URL)", () => {
   it("returns the stored timeline for an exact match, uncacheable", async () => {
     const res = await lookupTimelineResponse(reader(true), lookup({ trackingId: hash }));
+
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("no-store");
     const body = (await res.json()) as {
       parcelHash: string;
       events: { hcsSequenceNumber: string }[];
     };
+
     expect(body.parcelHash).toBe(hash);
     expect(body.events[0]?.hcsSequenceNumber).toBe("1");
   });
@@ -47,6 +49,7 @@ describe("POST /api/parcels/lookup (tracking ID in the body, never the URL)", ()
     ["garbage", "nope"],
   ])("returns the same 404 for %s", async (_label, trackingId) => {
     const res = await lookupTimelineResponse(reader(true), lookup({ trackingId }));
+
     expect(res.status).toBe(404);
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe("PARCEL_NOT_FOUND");
   });
@@ -63,6 +66,7 @@ describe("POST /api/parcels/lookup (tracking ID in the body, never the URL)", ()
       listEvents: async () => [],
     };
     const res = await lookupTimelineResponse(broken, lookup({ trackingId: hash }), () => {});
+
     expect(res.status).toBe(500);
     expect(await res.text()).not.toContain("secret-host");
   });

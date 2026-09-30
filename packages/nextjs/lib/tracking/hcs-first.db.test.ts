@@ -11,6 +11,7 @@ import { registerParcel } from "./register-parcel";
 const pool = createTestPool();
 const store = new PostgresTrackingStore(pool);
 const reader = new PostgresTrackingReader(pool);
+
 afterAll(() => pool.end());
 beforeEach(() => truncateAll(pool));
 
@@ -21,6 +22,7 @@ const count = async (table: "parcels" | "cargo_events") =>
 describe("HCS-first against real Postgres", () => {
   it("leaves both tables empty when parcel registration fails at the ledger", async () => {
     const submitter = new InstantSubmitter([], new Error("INVALID_SIGNATURE"));
+
     await expect(
       registerParcel({ parcel: parcelForm, firstEvent: referenceEvent }, { submitter, store }),
     ).rejects.toThrow(SubmissionFailedError);
@@ -34,6 +36,7 @@ describe("HCS-first against real Postgres", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       { submitter: new InstantSubmitter(log), store },
     );
+
     await expect(
       recordCargoEvent(
         { parcelHash, event: { ...referenceEvent, status: "Delivered" } },
@@ -41,6 +44,7 @@ describe("HCS-first against real Postgres", () => {
       ),
     ).rejects.toThrow(SubmissionFailedError);
     const events = await reader.listEvents(parcelHash);
+
     expect(events.map((e) => e.content.status)).toEqual(["In Transit"]);
   });
 });

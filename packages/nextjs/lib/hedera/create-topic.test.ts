@@ -12,6 +12,7 @@ const client = Client.forTestnet().setOperator(
   AccountId.fromString("0.0.1001"),
   PrivateKey.generateED25519(),
 );
+
 afterAll(() => client.close());
 
 const [s1, s2] = [PrivateKey.generateED25519(), PrivateKey.generateED25519()] as const;
@@ -28,6 +29,7 @@ describe("buildCreateTopicTransaction", () => {
     const tx = buildCreateTopicTransaction({ adminKey, submitKey, memo: "hcs-track-log" });
     const submit = tx.getSubmitKey();
     const admin = tx.getAdminKey();
+
     expect(submit).toBeInstanceOf(KeyList);
     expect(admin).toBeInstanceOf(KeyList);
     expect(isSameThresholdKey(submit, submitKey)).toBe(true);
@@ -45,6 +47,7 @@ describe("prepareCreateTopicTransaction", () => {
       memo: "m",
       adminSigners: [a1, a3],
     });
+
     expect(tx.isFrozen()).toBe(true);
     expect(countSatisfiedSignatures(adminKey, tx)).toBe(2);
     expect(a2.publicKey.verifyTransaction(tx)).toBe(false);

@@ -27,8 +27,10 @@ const enabled = process.env.RUN_TESTNET_TESTS === "1";
 
 async function eventually<T>(probe: () => Promise<T | null>, timeoutMs = 90_000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
+
   for (;;) {
     const value = await probe().catch(() => null);
+
     if (value !== null) return value;
     if (Date.now() > deadline) throw new Error("timed out waiting for the mirror node");
     await new Promise((r) => setTimeout(r, 2_000));
@@ -70,6 +72,7 @@ describe.skipIf(!enabled)("wallet approvals via scheduled transactions (testnet)
     });
     const mirrorBaseUrl = readMirrorNodeUrl();
     const pending = new PendingSubmissionStore(pool);
+
     deps = {
       propose: {
         scheduler: new HcsScheduler({ client, topicId, approvalWindowMs: 3_600_000 }),
@@ -95,6 +98,7 @@ describe.skipIf(!enabled)("wallet approvals via scheduled transactions (testnet)
       .setScheduleId(scheduleId)
       .freezeWith(client)
       .sign(key);
+
     await (await tx.execute(client)).getReceipt(client);
   };
 
@@ -108,15 +112,19 @@ describe.skipIf(!enabled)("wallet approvals via scheduled transactions (testnet)
     await approve(submission.scheduleId, approvers[0]);
     const afterOne = await eventually(async () => {
       const r = await finalizeSubmission(submission.id, deps.finalize);
+
       return r.status === "pending" && r.approvals >= 1 ? r : null;
     });
+
     expect(afterOne).toMatchObject({ status: "pending" });
 
     await approve(submission.scheduleId, approvers[2]); // ECDSA approver completes 2-of-3
     const done = await eventually(async () => {
       const r = await finalizeSubmission(submission.id, deps.finalize);
+
       return r.status === "executed" ? r : null;
     });
+
     expect(done).toMatchObject({ status: "executed", hcsSequenceNumber: 1n });
 
     const reader = new PostgresTrackingReader(pool);
@@ -127,6 +135,7 @@ describe.skipIf(!enabled)("wallet approvals via scheduled transactions (testnet)
       events: await reader.listEvents(submission.parcelHash),
       mirror: createMirrorClient({ baseUrl: readMirrorNodeUrl(), topicId: topicId.toString() }),
     });
+
     expect(report.parcel.status).toBe("verified");
     expect(report.summary).toEqual({ verified: 1, tampered: 0, unavailable: 0 });
   }, 240_000);

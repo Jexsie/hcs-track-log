@@ -29,6 +29,7 @@ export function Field({
   const described =
     [error ? `${id}-error` : null, hint ? `${id}-hint` : null].filter(Boolean).join(" ") ||
     undefined;
+
   return (
     <div className={`grid content-start gap-1.5 ${className ?? ""}`}>
       <label htmlFor={id} className="text-sm font-semibold">

@@ -32,6 +32,7 @@ function sign(
   const payload = Buffer.from(JSON.stringify({ typ: purpose, exp: expiresAt, ...claims })).toString(
     "base64url",
   );
+
   return `${payload}.${mac(payload, secret)}`;
 }
 
@@ -42,19 +43,25 @@ function open(
   now: Date,
 ): Record<string, unknown> | null {
   const [payload, signature, extra] = (token ?? "").split(".");
+
   if (!payload || !signature || extra !== undefined) return null;
   const expected = Buffer.from(mac(payload, secret));
   const given = Buffer.from(signature);
+
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
   let claims: unknown;
+
   try {
     claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
   } catch {
     return null;
   }
+
   if (typeof claims !== "object" || claims === null) return null;
   const c = claims as Record<string, unknown>;
+
   if (c.typ !== purpose || typeof c.exp !== "number" || c.exp <= now.getTime()) return null;
+
   return c;
 }
 
@@ -85,6 +92,7 @@ export function issueChallenge({
     `Issued: ${now.toISOString()}`,
     `Expires: ${expires.toISOString()}`,
   ].join("\n");
+
   return { message, token: sign("challenge", { accountId, message }, secret, expires.getTime()) };
 }
 
@@ -94,12 +102,14 @@ export function verifyChallenge(
   now: Date,
 ): { accountId: string; message: string } {
   const claims = open("challenge", token, secret, now);
+
   if (!claims || typeof claims.accountId !== "string" || typeof claims.message !== "string") {
     throw new AuthError(
       "BAD_CHALLENGE",
       "sign-in challenge is invalid or expired; request a new one",
     );
   }
+
   return { accountId: claims.accountId, message: claims.message };
 }
 
@@ -119,8 +129,11 @@ export function readSessionToken(
   now: Date,
 ): AdminIdentity | null {
   const claims = open("session", token, secret, now);
-  if (!claims || typeof claims.accountId !== "string" || typeof claims.publicKey !== "string")
+
+  if (!claims || typeof claims.accountId !== "string" || typeof claims.publicKey !== "string") {
     return null;
+  }
+
   return { accountId: claims.accountId, publicKey: claims.publicKey };
 }
 

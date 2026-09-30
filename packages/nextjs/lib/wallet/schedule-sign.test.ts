@@ -9,6 +9,7 @@ describe("buildScheduleSignTransaction", () => {
       payerAccountId: "0.0.100",
     });
     const tx = Transaction.fromBytes(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
+
     expect(tx).toBeInstanceOf(ScheduleSignTransaction);
     expect((tx as ScheduleSignTransaction).scheduleId?.toString()).toBe("0.0.777");
     expect(tx.transactionId?.accountId?.toString()).toBe("0.0.100");

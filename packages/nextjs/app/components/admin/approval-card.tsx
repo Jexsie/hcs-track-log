@@ -51,8 +51,10 @@ export function ApprovalCard({
   const autoFinalized = useRef(false);
   // Polling outlives a click; stop it (and its state updates) once the card unmounts.
   const mounted = useRef(true);
+
   useEffect(() => {
     mounted.current = true;
+
     return () => {
       mounted.current = false;
     };
@@ -62,6 +64,7 @@ export function ApprovalCard({
   // message against an envelope recomputed from the content shown here: in the browser, not the server.
   useEffect(() => {
     let cancelled = false;
+
     Promise.all([
       fetchSchedule(config.mirrorBaseUrl, submission.scheduleId),
       fetchTopicKeys(config.mirrorBaseUrl, config.topicId),
@@ -78,14 +81,18 @@ export function ApprovalCard({
       })
       .catch(async (e: unknown) => {
         if (cancelled) return;
+
         if (e instanceof MirrorNotFoundError) {
           setLedger({ status: "waiting" }); // a brand-new schedule takes a few seconds to reach the mirror node
           await sleep(POLL_MS);
           if (!cancelled) setReload((n) => n + 1);
+
           return;
         }
+
         setLedger({ status: "error", message: e instanceof Error ? e.message : String(e) });
       });
+
     return () => {
       cancelled = true;
     };
@@ -102,22 +109,29 @@ export function ApprovalCard({
 
   async function settle(maxPolls: number) {
     setPhase("finalizing");
+
     for (let i = 0; i < maxPolls; i++) {
       const r = await finalizeSubmission(submission.id);
+
       if (!mounted.current) return;
+
       if (!r.ok) {
         setError("Could not refresh. Try again.");
         break;
       }
+
       setResult(r.data);
+
       if (r.data.status !== "pending") {
         if (r.data.status === "executed") onFinalized?.();
         break;
       }
+
       if (!r.data.awaitingMirror && i >= 3) break; // still waiting on other administrators
       await sleep(POLL_MS);
       if (!mounted.current) return;
     }
+
     setPhase("idle");
     setReload((n) => n + 1);
   }
@@ -125,14 +139,17 @@ export function ApprovalCard({
   async function onApprove() {
     setError(null);
     setPhase("approving");
+
     try {
       await approve(submission.scheduleId);
     } catch {
       if (!mounted.current) return;
       setError("Approval was cancelled or failed in your wallet.");
       setPhase("idle");
+
       return;
     }
+
     if (!mounted.current) return;
     await settle(20);
   }
@@ -148,6 +165,7 @@ export function ApprovalCard({
   const startAutoApprove = useEffectEvent(() => {
     void Promise.resolve().then(onApprove);
   });
+
   useEffect(() => {
     if (!readyForAuto || autoStarted.current) return;
     autoStarted.current = true;
@@ -164,6 +182,7 @@ export function ApprovalCard({
   const startFinalize = useEffectEvent(() => {
     void Promise.resolve().then(() => settle(20));
   });
+
   useEffect(() => {
     if (!readyToFinalize || autoFinalized.current) return;
     autoFinalized.current = true;
@@ -183,10 +202,14 @@ export function ApprovalCard({
     !closed;
 
   const status = (() => {
-    if (ledger.status === "loading" || ledger.status === "waiting")
+    if (ledger.status === "loading" || ledger.status === "waiting") {
       return { tone: "text-muted", text: "Checking…" };
-    if (ledger.status === "error")
+    }
+
+    if (ledger.status === "error") {
       return { tone: "text-danger", text: "This change could not be checked. Try again." };
+    }
+
     return ledger.check.ok
       ? { tone: "text-ok", text: "Details match" }
       : { tone: "text-danger", text: "Do not approve: these details have been changed." };

@@ -13,6 +13,7 @@ let parcelHash: string;
 beforeAll(async () => {
   await truncateAll(pool);
   const fixture = await parcelFixture();
+
   parcelHash = fixture.parcelHash;
   await new PostgresTrackingStore(pool).insertParcelWithFirstEvent(
     fixture.parcel,

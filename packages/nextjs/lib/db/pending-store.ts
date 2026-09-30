@@ -59,6 +59,7 @@ export class PendingSubmissionStore implements PendingStore {
 
   async insert(s: NewSubmission): Promise<PendingSubmission> {
     let rows: Row[];
+
     try {
       ({ rows } = await this.pool.query<Row>(
         `INSERT INTO pending_submissions
@@ -78,12 +79,17 @@ export class PendingSubmissionStore implements PendingStore {
       ));
     } catch (error) {
       // A concurrent request staged the same registration first.
-      if (isUniqueViolation(error, OPEN_REGISTRATION_INDEX))
+      if (isUniqueViolation(error, OPEN_REGISTRATION_INDEX)) {
         throw new ParcelExistsError(s.parcelHash);
+      }
+
       throw error;
     }
+
     const [row] = rows;
+
     if (!row) throw new Error("insert returned no row");
+
     return toSubmission(row);
   }
 
@@ -94,6 +100,7 @@ export class PendingSubmissionStore implements PendingStore {
       [id],
     );
     const [row] = rows;
+
     return row ? toSubmission(row) : null;
   }
 
@@ -101,6 +108,7 @@ export class PendingSubmissionStore implements PendingStore {
     const { rows } = await this.pool.query<Row>(
       `SELECT ${COLUMNS} FROM pending_submissions WHERE status = 'pending' ORDER BY proposed_at`,
     );
+
     return rows.map(toSubmission);
   }
 
@@ -109,6 +117,7 @@ export class PendingSubmissionStore implements PendingStore {
       `SELECT 1 FROM pending_submissions WHERE parcel_hash = $1 AND kind = 'register-parcel' AND status = 'pending'`,
       [parcelHash],
     );
+
     return (rowCount ?? 0) > 0;
   }
 
@@ -120,12 +129,15 @@ export class PendingSubmissionStore implements PendingStore {
           WHERE id = $1 AND status = 'pending'`,
         [submission.id, recorded.hcsSequenceNumber.toString()],
       );
+
       if (rowCount !== 1) return; // finalized concurrently by another request
+
       if (submission.kind === "register-parcel" && submission.parcel) {
         // The parcel can already be cached if another registration of it executed first. Its event
         // is still anchored on the ledger, so cache the event rather than failing every finalize.
         await insertParcelRow(db, submission.parcelHash, submission.parcel, { ifAbsent: true });
       }
+
       await insertEventRow(db, recorded);
     });
   }

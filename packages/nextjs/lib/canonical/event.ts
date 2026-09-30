@@ -26,13 +26,16 @@ const CARRIER_KEYS = ["name", "scacCode"] as const;
 /** Standard Carrier Alpha Code: 2–4 letters, upper-cased. */
 export function normalizeScacCode(value: unknown): string {
   const code = normalizeText(value).toUpperCase();
+
   if (!/^[A-Z]{2,4}$/.test(code)) throw new FieldError("must be 2–4 letters");
+
   return code;
 }
 
 export function normalizeCargoEvent(input: unknown): CargoEvent {
   const event = readObject(input, "", EVENT_KEYS, "event");
   const carrier = readObject(event.carrier, "carrier", CARRIER_KEYS);
+
   return {
     status: readField(event, "", "status", normalizeText),
     location: readField(event, "", "location", normalizeText),

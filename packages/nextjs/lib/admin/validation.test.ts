@@ -60,6 +60,7 @@ describe("validateParcelForm / validateEventForm", () => {
 
   it("flags an invalid SCAC code and a missing timestamp", () => {
     const errors = validateEventForm({ ...event, scacCode: "M1", timestamp: "" });
+
     expect(errors.scacCode).toBe("Use 2–4 letters, e.g. MAEU");
     expect(errors.timestamp).toBe("Pick a date and time");
     expect(errors.timestamp).toBeDefined();
@@ -69,10 +70,12 @@ describe("validateParcelForm / validateEventForm", () => {
 describe("payload builders", () => {
   it("build payloads the shared normalizers accept (decimals stay strings, time becomes canonical UTC)", () => {
     const p = toParcelPayload(parcel);
+
     expect(p.consignment.grossMassKg).toBe("142.5");
     expect(() => normalizeParcel({ ...p, createdAt: "2026-09-25T00:00:00Z" })).not.toThrow();
 
     const e = toEventPayload(event);
+
     expect(e.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     expect(normalizeCargoEvent(e).carrier.scacCode).toBe("MTNL");
   });
@@ -81,7 +84,9 @@ describe("payload builders", () => {
 describe("friendly messages", () => {
   it("says Required for empty fields and never shows internal wording", () => {
     const errors = validateParcelForm(EMPTY_PARCEL_FORM);
+
     expect(errors.description).toBe("Required");
+
     for (const message of Object.values({ ...errors, ...validateEventForm(EMPTY_EVENT_FORM) })) {
       expect(message).not.toMatch(/must|decimal number|integer|hash|scac/i);
     }

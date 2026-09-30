@@ -31,8 +31,10 @@ describe("timeline DTO", () => {
     const dto = JSON.parse(JSON.stringify(toTimelineDto(parcel, [event]))) as ReturnType<
       typeof toTimelineDto
     >;
+
     expect(buildParcelCanonical(dto.parcel)).toEqual(buildParcelCanonical(parcel.content));
     const [first] = dto.events;
+
     expect(first && buildEventCanonical(first.content)).toEqual(buildEventCanonical(event.content));
     expect(first?.hcsSequenceNumber).toBe("9007199254740993");
     expect(eventsToVerify(dto)[0]?.hcsSequenceNumber).toBe(9007199254740993n);
@@ -40,6 +42,7 @@ describe("timeline DTO", () => {
 
   it("carries content only: no hash other than the searched tracking ID", () => {
     const json = JSON.stringify(toTimelineDto(parcel, [event]));
+
     expect(json.match(/[0-9a-f]{64}/g)).toEqual([parcel.parcelHash]);
     expect(json).not.toMatch(/payloadHash/i);
   });

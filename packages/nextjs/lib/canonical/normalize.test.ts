@@ -15,6 +15,7 @@ describe("normalizeText", () => {
   it("applies Unicode NFC so composed and decomposed forms are equal", () => {
     const decomposed = "Café Kigali";
     const composed = "Café Kigali";
+
     expect(normalizeText(decomposed)).toBe(composed);
     expect(normalizeText(composed)).toBe(composed);
   });

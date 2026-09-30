@@ -45,8 +45,10 @@ export async function verifyTopic({
 
   for (const hash of hashes) {
     const parcel = await reader.findParcel(hash);
+
     if (!parcel) continue;
     const events = await reader.listEvents(hash);
+
     for (const e of events) cachedSequences.add(e.hcsSequenceNumber);
     const report = await verifyTimeline({
       parcelHash: hash,
@@ -54,16 +56,20 @@ export async function verifyTopic({
       events,
       mirror,
     });
+
     parcels.push({ parcelHash: hash, report });
     onParcel?.(hash, report);
   }
 
   const uncached: bigint[] = [];
   const foreign: bigint[] = [];
+
   if (scanLedger && !parcelHash) {
     let scanned = 0;
+
     for await (const message of mirror.listMessages()) {
       if (++scanned % 1000 === 0) onScanProgress?.(scanned);
+
       try {
         parseEnvelope(message.message);
       } catch (error) {
@@ -71,6 +77,7 @@ export async function verifyTopic({
         foreign.push(message.sequenceNumber);
         continue;
       }
+
       if (!cachedSequences.has(message.sequenceNumber)) uncached.push(message.sequenceNumber);
     }
   }
@@ -82,12 +89,14 @@ export async function verifyTopic({
     unavailable: 0,
     tamperedParcels: 0,
   };
+
   for (const { report } of parcels) {
     totals.verified += report.summary.verified;
     totals.tampered += report.summary.tampered;
     totals.unavailable += report.summary.unavailable;
     if (report.parcel.status === "tampered") totals.tamperedParcels++;
   }
+
   return { parcels, uncached, foreign, totals };
 }
 
@@ -102,5 +111,6 @@ export const EXIT = { verified: 0, tampered: 1, incomplete: 2, missingFromCache:
 export function verifyExitCode({ totals, uncached }: Pick<TopicReport, "totals" | "uncached">) {
   if (totals.tampered || totals.tamperedParcels) return EXIT.tampered;
   if (uncached.length) return EXIT.missingFromCache;
+
   return totals.unavailable ? EXIT.incomplete : EXIT.verified;
 }

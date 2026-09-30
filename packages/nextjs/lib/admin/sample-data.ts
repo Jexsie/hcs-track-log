@@ -75,8 +75,10 @@ export function sampleParcelForm(): ParcelForm {
   const cargo = pick(CARGO);
   const count = Math.floor(between(1, 40));
   const mass = count * between(cargo.kgPerPackage[0], cargo.kgPerPackage[1]);
+
   counter = (counter + 1) % 1000;
   const unique = `${Date.now().toString(36).toUpperCase()}${counter.toString().padStart(3, "0")}`;
+
   return {
     description: cargo.description,
     packageCount: String(count),
@@ -93,6 +95,7 @@ export function sampleParcelForm(): ParcelForm {
 export function sampleEventForm(now: Date = new Date()): EventForm {
   const carrier = pick(CARRIERS);
   const at = new Date(Math.floor((now.getTime() - between(0, 7 * 86_400_000)) / 1000) * 1000);
+
   return {
     status: pick(STATUSES),
     location: pick(LOCATIONS),

@@ -6,6 +6,7 @@ export const TEST_DATABASE_URL =
 /** The suite drops the schema of this database, so refuse anything not clearly a test database. */
 export function assertTestDatabase(url: string): void {
   const name = new URL(url).pathname.slice(1);
+
   if (!name.endsWith("_test")) {
     throw new Error(
       `TEST_DATABASE_URL must point at a database whose name ends in _test, got "${name}"`,

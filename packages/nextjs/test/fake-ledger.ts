@@ -40,11 +40,14 @@ export class FakeLedger implements EnvelopeSubmitter, EnvelopeScheduler {
   async schedule(message: Uint8Array, memo: string): Promise<ScheduledSubmission> {
     if (this.failNextSchedule) {
       const error = this.failNextSchedule;
+
       this.failNextSchedule = null;
       throw error;
     }
+
     const scheduleId = `0.0.${9000 + this.schedules.size}`;
     const expiresAt = new Date(Date.now() + 86_400_000);
+
     this.schedules.set(scheduleId, {
       message,
       memo,
@@ -53,15 +56,18 @@ export class FakeLedger implements EnvelopeSubmitter, EnvelopeScheduler {
       deleted: false,
       expiresAt,
     });
+
     return { scheduleId, expiresAt };
   }
 
   /** Like a ScheduleSign from a wallet; executes the message once the threshold is reached. */
   async approve(scheduleId: string, publicKeyHex: string): Promise<void> {
     const s = this.schedules.get(scheduleId);
+
     if (!s) throw new Error(`no schedule ${scheduleId}`);
     s.signers.add(publicKeyHex);
     const valid = [...s.signers].filter((k) => this.submitKeys.includes(k)).length;
+
     if (!s.executedTimestamp && valid >= this.threshold) {
       await this.submit(s.message);
       s.executedTimestamp = this.entries.at(-1)?.consensusTimestamp ?? null;
@@ -87,11 +93,13 @@ export class FakeLedger implements EnvelopeSubmitter, EnvelopeScheduler {
 
   async submit(message: Uint8Array): Promise<SubmissionReceipt> {
     const sequenceNumber = BigInt(this.entries.length + 1);
+
     this.entries.push({
       message,
       consensusTimestamp: `1758800${400 + this.entries.length}.000000001`,
       payer: "0.0.1001",
     });
+
     return {
       sequenceNumber,
       transactionId: `0.0.1001@1758800400.${sequenceNumber}`,
@@ -125,31 +133,41 @@ export class FakeLedger implements EnvelopeSubmitter, EnvelopeScheduler {
     const url = new URL(
       typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
     );
+
     this.requests.push(url.pathname + url.search);
     const scheduleMatch = /^\/api\/v1\/schedules\/(\d+\.\d+\.\d+)$/.exec(url.pathname);
+
     if (url.origin === FAKE_MIRROR && scheduleMatch?.[1]) {
       const s = this.schedules.get(scheduleMatch[1]);
+
       return s
         ? Response.json(this.scheduleJson(scheduleMatch[1], s))
         : Response.json({}, { status: 404 });
     }
+
     const prefix = `/api/v1/topics/${FAKE_TOPIC}/messages`;
-    if (url.origin !== FAKE_MIRROR || !url.pathname.startsWith(prefix))
+
+    if (url.origin !== FAKE_MIRROR || !url.pathname.startsWith(prefix)) {
       return Response.json({}, { status: 404 });
+    }
 
     const single = /^\/(\d+)$/.exec(url.pathname.slice(prefix.length));
+
     if (single?.[1]) {
       const seq = Number(single[1]);
       const entry = this.entries[seq - 1];
+
       return entry
         ? Response.json(this.json(seq, entry))
         : Response.json({ _status: { messages: [{ message: "Not found" }] } }, { status: 404 });
     }
 
     const at = url.searchParams.get("timestamp")?.replace("eq:", "");
+
     if (at !== undefined) {
       const index = this.entries.findIndex((e) => e.consensusTimestamp === at);
       const hit = this.entries[index];
+
       return Response.json({
         messages: hit ? [this.json(index + 1, hit)] : [],
         links: { next: null },
@@ -162,6 +180,7 @@ export class FakeLedger implements EnvelopeSubmitter, EnvelopeScheduler {
       .slice(after, after + limit)
       .map((e, i) => this.json(after + i + 1, e));
     const last = after + page.length;
+
     return Response.json({
       messages: page,
       links: {

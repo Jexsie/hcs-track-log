@@ -10,10 +10,12 @@ export async function verifyParcelContent(
   content: unknown,
 ): Promise<ParcelVerdict> {
   let recomputed: string;
+
   try {
     recomputed = await computeParcelHash(content);
   } catch (error) {
     if (!(error instanceof ValidationError)) throw error;
+
     return {
       status: "tampered",
       reason: "invalid-content",
@@ -21,6 +23,7 @@ export async function verifyParcelContent(
       recomputedParcelHash: null,
     };
   }
+
   return recomputed === searchedParcelHash
     ? { status: "verified", parcelHash: recomputed }
     : {
@@ -58,22 +61,28 @@ export async function verifyTimeline({
 }: VerifyTimelineOptions): Promise<TimelineReport> {
   const verdicts: EventVerdict[] = new Array(events.length);
   let next = 0;
+
   const worker = async () => {
     while (next < events.length) {
       const index = next++;
       const event = events[index];
+
       if (!event) continue;
       const verdict = await verifyEvent(parcelHash, event, mirror);
+
       verdicts[index] = verdict;
       onEvent?.(verdict, index);
     }
   };
+
   const [parcelVerdict] = await Promise.all([
     verifyParcelContent(parcelHash, parcel),
     ...Array.from({ length: Math.max(1, Math.min(concurrency, events.length)) }, worker),
   ]);
 
   const summary = { verified: 0, tampered: 0, unavailable: 0 };
+
   for (const v of verdicts) summary[v.status]++;
+
   return { parcel: parcelVerdict, events: verdicts, summary };
 }

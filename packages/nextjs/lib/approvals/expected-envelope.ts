@@ -22,8 +22,10 @@ export async function expectedEnvelope(s: SubmissionContent): Promise<Uint8Array
     if (
       s.kind === "register-parcel" &&
       (!s.parcel || (await computeParcelHash(s.parcel)) !== s.parcelHash)
-    )
+    ) {
       return null;
+    }
+
     return serializeEnvelope(
       buildEnvelope({ parcelHash: s.parcelHash, payloadHash: await computePayloadHash(s.event) }),
     );

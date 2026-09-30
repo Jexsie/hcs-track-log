@@ -13,6 +13,7 @@ import { verifyTopic } from "./verify-topic";
 const pool = createTestPool();
 const store = new PostgresTrackingStore(pool);
 const reader = new PostgresTrackingReader(pool);
+
 afterAll(() => pool.end());
 beforeEach(() => truncateAll(pool));
 
@@ -21,11 +22,13 @@ const { createdAt: _createdAt, ...parcelForm } = referenceParcel;
 describe("verifyTopic (npm run verify)", () => {
   it("verifies every cached parcel, flags tampering, and finds ledger messages missing from the cache", async () => {
     const ledger = new FakeLedger();
+
     ledger.pageSize = 2; // force pagination over the topic
     const a = await registerParcel(
       { parcel: parcelForm, firstEvent: referenceEvent },
       { submitter: ledger, store },
     );
+
     await recordCargoEvent(
       { parcelHash: a.parcelHash, event: { ...referenceEvent, status: "Delivered" } },
       { submitter: ledger, store },
@@ -34,6 +37,7 @@ describe("verifyTopic (npm run verify)", () => {
       { parcel: { ...parcelForm, bookingRef: "BK-B" }, firstEvent: referenceEvent },
       { submitter: ledger, store },
     );
+
     // Anchored on the ledger but never cached (e.g. a DerivedWriteError), plus a foreign message.
     await ledger.submit(
       serializeEnvelope(buildEnvelope({ parcelHash: b.parcelHash, payloadHash: "c".repeat(64) })),
@@ -63,11 +67,13 @@ describe("verifyTopic (npm run verify)", () => {
     const tampered = report.parcels
       .flatMap((p) => p.report.events)
       .filter((e) => e.status === "tampered");
+
     expect(tampered.map((e) => e.sequenceNumber)).toEqual([2n]);
   });
 
   it("skips the topic scan on request", async () => {
     const ledger = new FakeLedger();
+
     await registerParcel(
       { parcel: parcelForm, firstEvent: referenceEvent },
       { submitter: ledger, store },
@@ -82,6 +88,7 @@ describe("verifyTopic (npm run verify)", () => {
       }),
       scanLedger: false,
     });
+
     expect(report.totals.verified).toBe(1);
     expect(report.foreign).toEqual([]);
     expect(ledger.requests.some((r) => r.includes("?"))).toBe(false);
@@ -93,6 +100,7 @@ describe("verifyTopic (npm run verify)", () => {
       { parcel: parcelForm, firstEvent: referenceEvent },
       { submitter: ledger, store },
     );
+
     await registerParcel(
       { parcel: { ...parcelForm, bookingRef: "BK-B" }, firstEvent: referenceEvent },
       { submitter: ledger, store },
@@ -106,6 +114,7 @@ describe("verifyTopic (npm run verify)", () => {
       }),
       parcelHash: a.parcelHash,
     });
+
     expect(report.parcels.map((p) => p.parcelHash)).toEqual([a.parcelHash]);
     expect(report.uncached).toEqual([]);
   });

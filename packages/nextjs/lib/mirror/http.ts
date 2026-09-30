@@ -24,13 +24,16 @@ export async function getMirrorJson(
   notFound?: string,
 ): Promise<unknown> {
   let response: Response;
+
   try {
     response = await fetchImpl(url, { headers: { accept: "application/json" } });
   } catch (cause) {
     throw new MirrorRequestError("mirror node is unreachable", { cause });
   }
+
   if (response.status === 404 && notFound !== undefined) throw new MirrorNotFoundError(notFound);
   if (!response.ok) throw new MirrorRequestError(`mirror node responded ${response.status}`);
+
   try {
     return await response.json();
   } catch (cause) {

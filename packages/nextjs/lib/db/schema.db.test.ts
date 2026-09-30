@@ -3,6 +3,7 @@ import { migrate } from "@/lib/db/migrate";
 import { TEST_DATABASE_URL, createTestPool } from "@/test/db/database";
 
 const pool = createTestPool();
+
 afterAll(() => pool.end());
 
 async function columns(table: string) {
@@ -13,6 +14,7 @@ async function columns(table: string) {
       ORDER BY attnum`,
     [table],
   );
+
   return Object.fromEntries(rows.map((r) => [r.column_name, r.type]));
 }
 
@@ -53,6 +55,7 @@ describe("schema", () => {
       `SELECT table_name, column_name FROM information_schema.columns
         WHERE table_schema = 'public' AND column_name ILIKE '%hash%' ORDER BY table_name`,
     );
+
     expect(rows).toEqual([
       { table_name: "cargo_events", column_name: "parcel_hash" },
       { table_name: "parcels", column_name: "parcel_hash" },
@@ -65,6 +68,7 @@ describe("schema", () => {
       `SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename IN ('parcels', 'cargo_events')`,
     );
     const defs = rows.map((r) => r.indexdef);
+
     expect(defs).toContainEqual(
       expect.stringMatching(/UNIQUE INDEX .* ON public\.parcels .*\(parcel_hash\)/),
     );
@@ -83,6 +87,7 @@ describe("schema", () => {
           `SELECT to_regclass('public.pending_submissions_open_registration_idx')::text AS t`,
         )
       ).rows[0]?.t;
+
     await migrate(TEST_DATABASE_URL, "down", () => {});
     expect(await index()).toBeNull();
     await migrate(TEST_DATABASE_URL, "up", () => {});
@@ -93,6 +98,7 @@ describe("schema", () => {
   it("the one-open-registration migration closes existing duplicates, keeping the earliest", async () => {
     await pool.query("TRUNCATE pending_submissions"); // other test files leave rows behind
     await migrate(TEST_DATABASE_URL, "down", () => {});
+
     try {
       const stage = (id: string, scheduleId: string, proposedAt: string) =>
         pool.query(
@@ -104,6 +110,7 @@ describe("schema", () => {
         );
       const earliest = "00000000-0000-4000-8000-000000000001";
       const later = "00000000-0000-4000-8000-000000000002";
+
       await stage(later, "0.0.2", "2026-09-28T10:00:01Z");
       await stage(earliest, "0.0.1", "2026-09-28T10:00:00Z");
 
@@ -112,6 +119,7 @@ describe("schema", () => {
       const { rows } = await pool.query<{ id: string; status: string }>(
         "SELECT id, status FROM pending_submissions ORDER BY proposed_at",
       );
+
       expect(rows).toEqual([
         { id: earliest, status: "pending" },
         { id: later, status: "rejected" },

@@ -10,6 +10,7 @@ import { verifyParcelContent, verifyTimeline } from "./verify-timeline";
 describe("verifyParcelContent", () => {
   it("recomputes the tracking ID from content", async () => {
     const parcelHash = await computeParcelHash(referenceParcel);
+
     expect(await verifyParcelContent(parcelHash, referenceParcel)).toEqual({
       status: "verified",
       parcelHash,
@@ -22,6 +23,7 @@ describe("verifyParcelContent", () => {
       ...referenceParcel,
       consignment: { ...referenceParcel.consignment, grossMassKg: "99.00" },
     };
+
     expect(await verifyParcelContent(parcelHash, edited)).toMatchObject({
       status: "tampered",
       reason: "content-mismatch",
@@ -50,14 +52,18 @@ describe("verifyTimeline", () => {
       status,
     }));
     const events = [];
+
     for (const content of contents) {
       const payloadHash = await computePayloadHash(content);
       const { sequenceNumber } = await ledger.submit(
         serializeEnvelope(buildEnvelope({ parcelHash, payloadHash })),
       );
+
       events.push({ hcsSequenceNumber: sequenceNumber, content });
     }
+
     const second = events[1];
+
     if (second) second.content = { ...second.content, location: "Elsewhere" };
 
     const progress: bigint[] = [];

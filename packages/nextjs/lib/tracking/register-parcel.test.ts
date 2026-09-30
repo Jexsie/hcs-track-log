@@ -12,6 +12,7 @@ const now = () => new Date("2026-09-20T08:15:00.789Z");
 
 let log: Effect[];
 let store: InMemoryStore;
+
 beforeEach(() => {
   log = [];
   store = new InMemoryStore(log);
@@ -28,6 +29,7 @@ describe("registerParcel — HCS-first", () => {
     expect(result.parcel.createdAt).toBe("2026-09-20T08:15:00Z");
     expect(result.parcelHash).toBe(await computeParcelHash(referenceParcel));
     const [message] = submitter.messages;
+
     expect(message && parseEnvelope(message).parcelHash).toBe(result.parcelHash);
   });
 
@@ -40,6 +42,7 @@ describe("registerParcel — HCS-first", () => {
       },
       { submitter, store, now },
     );
+
     expect(result.parcel.createdAt).toBe("2026-09-20T08:15:00Z");
   });
 
@@ -49,11 +52,13 @@ describe("registerParcel — HCS-first", () => {
       { parcel: parcelFields, firstEvent: referenceEvent },
       { submitter, store, now },
     );
+
     await vi.waitFor(() => expect(submitter.isPending).toBe(true));
     expect(store.parcels.size).toBe(0);
 
     submitter.succeed();
     const result = await pending;
+
     expect(log).toEqual(["submit:start", "submit:ok", "store:write"]);
     expect(store.parcels.get(result.parcelHash)).toEqual(result.parcel);
     expect(store.events).toEqual([result.firstEvent]);
@@ -61,6 +66,7 @@ describe("registerParcel — HCS-first", () => {
 
   it("writes nothing when submission fails", async () => {
     const submitter = new InstantSubmitter(log, new Error("network down"));
+
     await expect(
       registerParcel(
         { parcel: parcelFields, firstEvent: referenceEvent },
@@ -88,6 +94,7 @@ describe("registerParcel — HCS-first", () => {
 
   it("validates both parcel and first event before submitting", async () => {
     const submitter = new InstantSubmitter(log);
+
     await expect(
       registerParcel(
         { parcel: { ...parcelFields, bookingRef: " " }, firstEvent: referenceEvent },
