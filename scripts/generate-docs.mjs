@@ -1,8 +1,8 @@
 // npm run docs:generate
 //
 // Regenerates the AUTO-GENERATED tables from their sources of truth:
-//   README.md                  scripts ← package.json, env ← .env.example
-//   packages/nextjs/README.md  routes  ← packages/nextjs/app/api/**/route.ts
+//   packages/nextjs/README.md  scripts ← package.json, env ← .env.example,
+//                              routes  ← packages/nextjs/app/api/**/route.ts
 // Fails if a script, variable or route has no description below, so the docs cannot silently drift.
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -146,10 +146,7 @@ if (problems.length) {
   process.exit(1);
 }
 
-const TARGETS = [
-  { file: "README.md", blocks: { scripts, env } },
-  { file: "packages/nextjs/README.md", blocks: { routes } },
-];
+const TARGETS = [{ file: "packages/nextjs/README.md", blocks: { scripts, env, routes } }];
 const SOURCES = { scripts: "package.json", env: ".env.example", routes: "app/api/**/route.ts" };
 
 for (const { file, blocks } of TARGETS) {

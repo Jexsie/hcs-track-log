@@ -2,9 +2,9 @@
  * npm run keys:generate -- [--submit 2/3] [--admin 2/3]
  *
  * Generates ED25519 keypairs for the topic's submit key and admin key (threshold/count each) and
- * prints .env lines for a local/dev setup. Submit private keys never go in .env: import them into
- * test wallets, which approve every message. In production each party generates its own key and
- * shares only the public key.
+ * prints .env lines for a local/dev setup. Submit keys only work for accounts that hold them, so
+ * usually the submit key is your staff wallets' own public keys instead. In production each party
+ * generates its own key and shares only the public key.
  */
 import { parseArgs } from "node:util";
 import { PrivateKey } from "@hiero-ledger/sdk";
@@ -41,7 +41,10 @@ function printRole(role: "submit" | "admin", spec: string, purpose: string): voi
   console.log(`${prefix}_THRESHOLD=${threshold}`);
 
   if (role === "submit") {
-    console.log("# Submit private keys: import each into a test wallet (not into .env):");
+    console.log(
+      "# These work only for accounts created with these keys; usually use your wallets'",
+    );
+    console.log("# public keys instead. Private keys (never in .env):");
     for (const k of keys) console.log(`# ${k.toStringDer()}`);
 
     return;

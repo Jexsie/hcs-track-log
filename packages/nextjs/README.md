@@ -7,8 +7,136 @@ company:
 - **Staff** book shipments and post updates in the staff portal at `/admin`. Each change goes on
   the ledger only after several staff wallets approve it.
 
-Shipment details live in Postgres. The ledger holds only hashes. Setup and environment variables
-are in the [root README](../../README.md#quick-start).
+Shipment details live in Postgres. The ledger holds only hashes. How the model works is explained
+in the [root README](../../README.md#model).
+
+## Setup
+
+### Prerequisites
+
+| Requirement              | Notes                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Node.js `>=20.18.3`      | The version used by CI is pinned in `.nvmrc`                                            |
+| npm                      | The only supported package manager                                                      |
+| Docker                   | Runs the bundled Postgres 18, or set `DATABASE_URL` to point at your own                |
+| Hedera testnet account   | The operator account, from [portal.hedera.com](https://portal.hedera.com/)              |
+| Hedera wallets           | One per approving staff member, in a wallet that supports WalletConnect (e.g. HashPack) |
+| WalletConnect project ID | From [dashboard.reown.com](https://dashboard.reown.com), for the staff portal           |
+
+All commands run from the repository root, and every variable lives in the root `.env`.
+
+### 1. Install and configure
+
+```bash
+npm install
+cp .env.example .env
+```
+
+Set `HEDERA_OPERATOR_ID` and `HEDERA_OPERATOR_KEY` to the operator account. It pays for topic
+creation and for every approval schedule. **It must not be one of the approving wallets**: Hedera
+counts the payer's signature toward a scheduled transaction, so `topic:create` and the server both
+refuse an operator that holds a submit key.
+
+### 2. Choose the keys
+
+The topic needs two threshold keys, each at least 2-of-N. See
+[Configuring the threshold keys](#configuring-the-threshold-keys) for the rules.
+
+- **Submit key: your wallets.** Set `HCS_SUBMIT_PUBLIC_KEYS` to the public keys of the staff wallet
+  accounts, and `HCS_SUBMIT_THRESHOLD` to how many must approve each change. Only accounts with a
+  single ED25519 or ECDSA key can sign in. You can read an account's key from the mirror node at
+  `https://testnet.mirrornode.hedera.com/api/v1/accounts/<account id>`; ED25519 hex is accepted as
+  is, and ECDSA hex needs a `0x` prefix.
+- **Admin key: throwaway keys are fine for development.** `npm run keys:generate` prints
+  `HCS_ADMIN_PUBLIC_KEYS`, `HCS_ADMIN_THRESHOLD` and `HCS_ADMIN_SIGNER_KEYS` lines to paste into
+  `.env`. It prints submit keys too, but those only work if you create testnet accounts with them,
+  so usually keep your wallets' keys instead.
+
+### 3. Start Postgres and create the schema
+
+```bash
+docker compose up -d
+npm run db:migrate
+```
+
+### 4. Create the topic
+
+```bash
+npm run topic:create
+```
+
+This creates the topic with both threshold keys, reads it back to confirm them, and prints the id.
+Set `HCS_TOPIC_ID` to it, then remove `HCS_ADMIN_SIGNER_KEYS` from `.env`: the running server needs
+only public keys.
+
+### 5. Configure the staff portal
+
+Set `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` to your WalletConnect project ID, and
+`ADMIN_SESSION_SECRET` to a random string of at least 32 characters, for example from
+`openssl rand -hex 32`.
+
+### 6. Run it
+
+```bash
+npm run next:dev
+```
+
+Open http://localhost:3000/admin, connect a staff wallet (scan the QR code or paste the pairing
+link) and sign in. Book a shipment: your wallet is asked to approve it first, and a second staff
+wallet completes the approval at `/admin/approvals`. Once the network executes the change, the
+shipment appears for customers at http://localhost:3000.
+
+### 7. Check it against the ledger
+
+```bash
+npm run verify
+```
+
+See [From the command line](#from-the-command-line) for the options and exit codes.
+
+### Environment variables
+
+<!-- AUTO-GENERATED:env (from .env.example; do not edit by hand) -->
+
+| Variable                               | Required             | Used by                              | Description                                                                                                                                                                                        |
+| -------------------------------------- | -------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HEDERA_NETWORK`                       | No                   | all                                  | testnet \| previewnet \| mainnet. Default `testnet`.                                                                                                                                               |
+| `HEDERA_OPERATOR_ID`                   | Yes                  | server, topic:create                 | Operator account: pays for topic creation and for approval schedules. It is NOT a submit key.                                                                                                      |
+| `HEDERA_OPERATOR_KEY`                  | Yes                  | server, topic:create                 | DER- or hex-encoded ECDSA/ED25519 private key. Placeholder — never commit a real key.                                                                                                              |
+| `HCS_TOPIC_ID`                         | Yes                  | server, verify                       | Filled in after `npm run topic:create`.                                                                                                                                                            |
+| `HCS_SUBMIT_PUBLIC_KEYS`               | Yes                  | server, topic:create                 | Public keys of the administrators' WALLET accounts (comma-separated). Every topic message must be approved from these wallets in the admin console; the web server never holds these private keys. |
+| `HCS_SUBMIT_THRESHOLD`                 | Yes                  | server, topic:create                 | How many wallet approvals each message needs (2..N).                                                                                                                                               |
+| `HCS_ADMIN_PUBLIC_KEYS`                | Yes                  | server, topic:create                 | Public keys of topic administrators (comma-separated). Required to create, update or delete the topic. The running server needs only these PUBLIC keys, to confirm the topic was not altered.      |
+| `HCS_ADMIN_THRESHOLD`                  | Yes                  | server, topic:create                 | How many admin signatures are required (2..N).                                                                                                                                                     |
+| `HCS_ADMIN_SIGNER_KEYS`                | topic:create only    | topic:create                         | Admin private keys, used ONLY by `npm run topic:create`. Remove them from the server afterwards.                                                                                                   |
+| `MIRROR_NODE_URL`                      | No                   | server, browser verification, verify | Default `https://<network>.mirrornode.hedera.com`.                                                                                                                                                 |
+| `DATABASE_URL`                         | Yes                  | server, db:migrate, verify           | Matches docker-compose.yml defaults.                                                                                                                                                               |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | For the staff portal | staff portal (browser)               | WalletConnect Cloud project id from https://dashboard.reown.com (32 hex characters).                                                                                                               |
+| `ADMIN_SESSION_SECRET`                 | For the staff portal | server                               | HMAC key for sign-in challenges and admin session cookies. Generate: openssl rand -hex 32.                                                                                                         |
+| `HCS_APPROVAL_WINDOW_HOURS`            | No                   | server                               | How long a proposal waits for wallet approvals, in hours (1..1488; Hedera allows up to 62 days). Default `24`.                                                                                     |
+
+<!-- /AUTO-GENERATED:env -->
+
+### Scripts
+
+<!-- AUTO-GENERATED:scripts (from package.json; do not edit by hand) -->
+
+| Command                 | Runs                                                                           | Description                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `npm run next:dev`      | `next dev`                                                                     | Dev server: customer tracking at `/`, staff portal at `/admin`                                                 |
+| `npm run next:build`    | `next build`                                                                   | Production build (type-checks)                                                                                 |
+| `npm run next:start`    | `next start`                                                                   | Serve the production build                                                                                     |
+| `npm run lint`          | `eslint . && npm run typecheck --workspace=@hcs-track-log/nextjs`              | ESLint, then `tsc --noEmit`                                                                                    |
+| `npm run format`        | `prettier --write .`                                                           | Format everything with Prettier                                                                                |
+| `npm run format:check`  | `prettier --check .`                                                           | Check formatting without writing (used by CI and hooks)                                                        |
+| `npm run prepare`       | `husky`                                                                        | Installs the husky pre-commit hook (runs on `npm install`)                                                     |
+| `npm run topic:create`  | `tsx scripts/create-topic.ts`                                                  | Create the topic with threshold admin + submit keys and verify them on-chain                                   |
+| `npm run keys:generate` | `tsx scripts/generate-keys.ts`                                                 | Print throwaway submit/admin key sets for local testing (`-- --submit 2/3 --admin 2/3`)                        |
+| `npm run db:migrate`    | `tsx scripts/migrate.ts`                                                       | Apply pending migrations (`-- --down` rolls back the latest)                                                   |
+| `npm run verify`        | `tsx scripts/verify.ts`                                                        | Recompute every cached update and compare it with the ledger (`-- --topic <id> [--parcel <id>] [--skip-scan]`) |
+| `npm run docs:generate` | `node scripts/generate-docs.mjs && prettier --write packages/nextjs/README.md` | Regenerate the README tables from `package.json`, `.env.example` and the API routes                            |
+
+<!-- /AUTO-GENERATED:scripts -->
 
 ## Pages
 
@@ -155,16 +283,19 @@ The topic has **two threshold keys**, enforced by the Hedera network itself (`IN
 | **Submit key** | Every message on the topic     | Staff **wallets**, which approve each change                                   |
 | **Admin key**  | Updating or deleting the topic | Topic administrators; only `npm run topic:create` uses `HCS_ADMIN_SIGNER_KEYS` |
 
-1. **Collect public keys.** Each staff member shares their wallet account's public key. Only
-   accounts with a single ED25519 or ECDSA key can sign in. For local testing,
-   `npm run keys:generate -- --submit 2/3 --admin 2/3` prints throwaway key sets.
-2. **Configure `.env`.** For `HCS_SUBMIT_*` and `HCS_ADMIN_*`, set `*_PUBLIC_KEYS` (comma-separated,
-   DER or `0x`-hex) and `*_THRESHOLD` (at least 2, at most the number of keys).
-   `HCS_ADMIN_SIGNER_KEYS` is only needed to create the topic; remove it from the server afterwards.
-3. **Create the topic** with `npm run topic:create`. It co-signs with enough admin keys, reads the
-   topic back to confirm both keys, and prints the id for `HCS_TOPIC_ID`.
+The rules, checked by `topic:create` and by the server:
 
-The server repeats that check before its first schedule and refuses to propose
+- Each key needs at least 2 public keys, and a threshold from 2 up to the number of keys. A
+  threshold of 1 is refused, because it would not be multi-signature.
+- Public keys are comma-separated, DER-encoded or raw hex. Raw hex is read as ED25519 unless it has a
+  `0x` prefix, which marks it as ECDSA.
+- Submit keys must belong to wallet accounts with a single ED25519 or ECDSA key, because sign-in
+  checks the account's current key on the mirror node.
+- `HCS_ADMIN_SIGNER_KEYS` is needed only to create the topic. The step-by-step order is in
+  [Setup](#setup).
+
+`topic:create` reads the new topic back to confirm both keys. The server repeats that check before
+its first schedule and refuses to propose
 (`SERVER_MISCONFIGURED`) if the keys changed. **The operator account must not be a submit key.**
 Hedera counts the payer's signature on a `ScheduleCreate` toward the scheduled transaction, so an
 operator holding a submit key would silently approve every proposal. `topic:create` and the server
